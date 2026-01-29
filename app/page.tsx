@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, BarChart3, FileText, User } from "lucide-react";
+import { Calendar, BarChart3, FileText, Linkedin, LayoutDashboard } from "lucide-react";
 
 export default function Home() {
   return (
@@ -17,7 +17,22 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {/* Dashboard */}
+          <Link href="/dashboard">
+            <div className="bg-white rounded-lg shadow-xl p-6 hover:shadow-2xl transition-shadow cursor-pointer group">
+              <div className="flex items-center justify-center w-12 h-12 bg-fm-blue rounded-lg mb-4 group-hover:bg-fm-orange transition-colors">
+                <LayoutDashboard className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Content Dashboard
+              </h3>
+              <p className="text-sm text-gray-600">
+                Weekly overview of content flow: blogs → LinkedIn → social media
+              </p>
+            </div>
+          </Link>
+
           {/* Social Calendar */}
           <Link href="/social-calendar">
             <div className="bg-white rounded-lg shadow-xl p-6 hover:shadow-2xl transition-shadow cursor-pointer group">
@@ -28,10 +43,38 @@ export default function Home() {
                 Social Calendar
               </h3>
               <p className="text-sm text-gray-600">
-                Plan and manage Instagram, Facebook, and LinkedIn content with approval workflows
+                Plan and manage Instagram, Facebook, and LinkedIn content
               </p>
             </div>
           </Link>
+
+          {/* Blog Posts */}
+          <Link href="/blog-posts">
+            <div className="bg-white rounded-lg shadow-xl p-6 hover:shadow-2xl transition-shadow cursor-pointer group">
+              <div className="flex items-center justify-center w-12 h-12 bg-fm-blue rounded-lg mb-4 group-hover:bg-fm-orange transition-colors">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Blog Posts
+              </h3>
+              <p className="text-sm text-gray-600">
+                Plan and track Female Mavericks blog content (Wednesdays)
+              </p>
+            </div>
+          </Link>
+
+          {/* Beth's LinkedIn - Coming Soon */}
+          <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">
+            <div className="flex items-center justify-center w-12 h-12 bg-gray-300 rounded-lg mb-4">
+              <Linkedin className="w-6 h-6 text-gray-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-500 mb-2">
+              Beth's LinkedIn
+            </h3>
+            <p className="text-sm text-gray-400">
+              Coming soon: LinkedIn content for Beth
+            </p>
+          </div>
 
           {/* Analytics - Coming Soon */}
           <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">
@@ -45,37 +88,11 @@ export default function Home() {
               Coming soon: GA4, Instagram, Facebook, and GHL metrics
             </p>
           </div>
-
-          {/* Blog Posts - Coming Soon */}
-          <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-300 rounded-lg mb-4">
-              <FileText className="w-6 h-6 text-gray-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-500 mb-2">
-              Blog Posts
-            </h3>
-            <p className="text-sm text-gray-400">
-              Coming soon: Blog planning and scheduling
-            </p>
-          </div>
-
-          {/* Beth's LinkedIn - Coming Soon */}
-          <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-300 rounded-lg mb-4">
-              <User className="w-6 h-6 text-gray-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-500 mb-2">
-              Beth's LinkedIn
-            </h3>
-            <p className="text-sm text-gray-400">
-              Coming soon: LinkedIn content for Beth
-            </p>
-          </div>
         </div>
 
         <div className="mt-16 text-center">
           <p className="text-white/60 text-sm">
-            Phase 2: Social Calendar Complete • Phases 3-7 In Progress
+            Phases 1-4 Complete • Phases 5-7 In Progress
           </p>
         </div>
       </div>
