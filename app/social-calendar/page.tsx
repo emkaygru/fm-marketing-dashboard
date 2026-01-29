@@ -7,13 +7,17 @@ import ContentTable from '@/components/ContentTable';
 import CalendarGrid from '@/components/CalendarGrid';
 import ContentForm from '@/components/ContentForm';
 import CommentThread from '@/components/CommentThread';
+import DayDetailModal from '@/components/DayDetailModal';
 
 export default function SocialCalendarPage() {
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCommentThreadOpen, setIsCommentThreadOpen] = useState(false);
+  const [isDayDetailOpen, setIsDayDetailOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'duplicate'>('create');
   const [selectedContent, setSelectedContent] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDayContent, setSelectedDayContent] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Load view preference from localStorage
@@ -160,16 +164,9 @@ export default function SocialCalendarPage() {
         ) : (
           <CalendarGrid
             onDayClick={(date, dayContent) => {
-              // When clicking a day, you could show content details or open form
-              if (dayContent.length > 0) {
-                // Show first content item
-                handleCommentContent(dayContent[0]);
-              } else {
-                // Open form to create content for that day
-                setFormMode('create');
-                setSelectedContent({ post_date: format(date, 'yyyy-MM-dd') });
-                setIsFormOpen(true);
-              }
+              setSelectedDate(date);
+              setSelectedDayContent(dayContent);
+              setIsDayDetailOpen(true);
             }}
             refreshTrigger={refreshTrigger}
           />
@@ -190,6 +187,43 @@ export default function SocialCalendarPage() {
         onClose={() => setIsCommentThreadOpen(false)}
         contentId={selectedContent?.id}
         contentTitle={selectedContent?.content_needs}
+      />
+
+      <DayDetailModal
+        isOpen={isDayDetailOpen}
+        onClose={() => setIsDayDetailOpen(false)}
+        date={selectedDate}
+        content={selectedDayContent}
+        onEdit={handleEditContent}
+        onDuplicate={handleDuplicateContent}
+        onComment={handleCommentContent}
+        onDelete={async (id) => {
+          await handleDeleteContent(id);
+          setSelectedDayContent(selectedDayContent.filter((c) => c.id !== id));
+        }}
+        onStatusChange={async (id, status) => {
+          try {
+            const response = await fetch('/api/social-content', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id, status }),
+            });
+            if (response.ok) {
+              setRefreshTrigger((prev) => prev + 1);
+              // Update the selected day content
+              setSelectedDayContent(
+                selectedDayContent.map((c) => (c.id === id ? { ...c, status } : c))
+              );
+            }
+          } catch (error) {
+            console.error('Error updating status:', error);
+          }
+        }}
+        onAddContent={() => {
+          setFormMode('create');
+          setSelectedContent(selectedDate ? { post_date: format(selectedDate, 'yyyy-MM-dd') } : null);
+          setIsFormOpen(true);
+        }}
       />
     </div>
   );

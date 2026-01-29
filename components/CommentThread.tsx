@@ -176,7 +176,7 @@ export default function CommentThread({ isOpen, onClose, contentId, contentTitle
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Write a reply..."
                 rows={2}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 placeholder-gray-400"
               />
               <div className="flex justify-end gap-2 mt-2">
                 <button
@@ -254,7 +254,7 @@ export default function CommentThread({ isOpen, onClose, contentId, contentTitle
             <select
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
             >
               <option value="Emily">Emily</option>
               <option value="Ali">Ali</option>
@@ -266,7 +266,7 @@ export default function CommentThread({ isOpen, onClose, contentId, contentTitle
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Add a comment..."
             rows={3}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 placeholder-gray-400"
           />
           <button
             type="submit"
