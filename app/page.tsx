@@ -78,18 +78,20 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Analytics - Coming Soon */}
-          <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-300 rounded-lg mb-4">
-              <BarChart3 className="w-6 h-6 text-gray-600" />
+          {/* Analytics */}
+          <Link href="/analytics">
+            <div className="bg-white rounded-lg shadow-xl p-6 hover:shadow-2xl transition-shadow cursor-pointer group">
+              <div className="flex items-center justify-center w-12 h-12 bg-fm-blue rounded-lg mb-4 group-hover:bg-fm-orange transition-colors">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Analytics
+              </h3>
+              <p className="text-sm text-gray-600">
+                GA4, Instagram, Facebook, and GHL performance metrics
+              </p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-500 mb-2">
-              Analytics
-            </h3>
-            <p className="text-sm text-gray-400">
-              Coming soon: GA4, Instagram, Facebook, and GHL metrics
-            </p>
-          </div>
+          </Link>
         </div>
 
         <div className="mt-16 text-center">
