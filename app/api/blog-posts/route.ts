@@ -38,15 +38,6 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const { title, topic, author, publish_date, link, status } = data;
 
-    // Validate publish_date is a Wednesday
-    const date = new Date(publish_date);
-    if (date.getDay() !== 3) {
-      return NextResponse.json(
-        { error: 'Publish date must be a Wednesday' },
-        { status: 400 }
-      );
-    }
-
     const result = await sql`
       INSERT INTO blog_posts (title, topic, author, publish_date, link, status)
       VALUES (${title}, ${topic || null}, ${author}, ${publish_date}, ${link || null}, ${status || 'draft'})
@@ -71,17 +62,6 @@ export async function PUT(request: NextRequest) {
   try {
     const data = await request.json();
     const { id, title, topic, author, publish_date, link, status } = data;
-
-    // If publish_date is being updated, validate it's a Wednesday
-    if (publish_date) {
-      const date = new Date(publish_date);
-      if (date.getDay() !== 3) {
-        return NextResponse.json(
-          { error: 'Publish date must be a Wednesday' },
-          { status: 400 }
-        );
-      }
-    }
 
     const result = await sql`
       UPDATE blog_posts

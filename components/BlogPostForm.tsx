@@ -32,17 +32,11 @@ export default function BlogPostForm({ isOpen, onClose, onSubmit, initialData, m
         status: initialData.status || 'draft',
       });
     } else if (mode === 'create') {
-      // Find next Wednesday
-      const today = new Date();
-      const nextWednesday = new Date(today);
-      const daysUntilWednesday = (3 - today.getDay() + 7) % 7;
-      nextWednesday.setDate(today.getDate() + (daysUntilWednesday === 0 ? 7 : daysUntilWednesday));
-
       setFormData({
         title: '',
         topic: '',
         author: 'Beth Mazza',
-        publish_date: nextWednesday.toISOString().split('T')[0],
+        publish_date: '',
         link: '',
         status: 'draft',
       });
@@ -52,13 +46,6 @@ export default function BlogPostForm({ isOpen, onClose, onSubmit, initialData, m
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate it's a Wednesday
-    const date = new Date(formData.publish_date);
-    if (date.getDay() !== 3) {
-      alert('Publish date must be a Wednesday!');
-      return;
-    }
-
     const submitData: any = { ...formData };
 
     if (mode === 'edit' && initialData) {
@@ -67,20 +54,6 @@ export default function BlogPostForm({ isOpen, onClose, onSubmit, initialData, m
 
     onSubmit(submitData);
     onClose();
-  };
-
-  const getNextWednesdays = () => {
-    const wednesdays = [];
-    const today = new Date();
-
-    for (let i = 0; i < 12; i++) {
-      const nextWed = new Date(today);
-      const daysUntilWednesday = (3 - today.getDay() + 7) % 7;
-      nextWed.setDate(today.getDate() + (daysUntilWednesday === 0 ? 7 : daysUntilWednesday) + (i * 7));
-      wednesdays.push(nextWed.toISOString().split('T')[0]);
-    }
-
-    return wednesdays;
   };
 
   if (!isOpen) return null;
@@ -145,26 +118,15 @@ export default function BlogPostForm({ isOpen, onClose, onSubmit, initialData, m
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Publish Date (Wednesday) *
+                Publish Date *
               </label>
-              <select
+              <input
+                type="date"
                 required
                 value={formData.publish_date}
                 onChange={(e) => setFormData({ ...formData, publish_date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
-              >
-                <option value="">Select a Wednesday...</option>
-                {getNextWednesdays().map((date) => (
-                  <option key={date} value={date}>
-                    {new Date(date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 
