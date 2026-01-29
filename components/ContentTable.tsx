@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, addWeeks, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 import { Edit2, Trash2, Copy, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import StatusBadge from './StatusBadge';
