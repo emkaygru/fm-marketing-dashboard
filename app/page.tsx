@@ -63,18 +63,20 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Beth's LinkedIn - Coming Soon */}
-          <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">
-            <div className="flex items-center justify-center w-12 h-12 bg-gray-300 rounded-lg mb-4">
-              <Linkedin className="w-6 h-6 text-gray-600" />
+          {/* Beth's LinkedIn */}
+          <Link href="/beth-linkedin">
+            <div className="bg-white rounded-lg shadow-xl p-6 hover:shadow-2xl transition-shadow cursor-pointer group">
+              <div className="flex items-center justify-center w-12 h-12 bg-fm-blue rounded-lg mb-4 group-hover:bg-fm-orange transition-colors">
+                <Linkedin className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Beth's LinkedIn
+              </h3>
+              <p className="text-sm text-gray-600">
+                LinkedIn content assignments for Beth
+              </p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-500 mb-2">
-              Beth's LinkedIn
-            </h3>
-            <p className="text-sm text-gray-400">
-              Coming soon: LinkedIn content for Beth
-            </p>
-          </div>
+          </Link>
 
           {/* Analytics - Coming Soon */}
           <div className="bg-white/50 rounded-lg shadow-xl p-6 cursor-not-allowed">

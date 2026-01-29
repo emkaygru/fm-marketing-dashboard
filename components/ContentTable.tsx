@@ -264,28 +264,18 @@ export default function ContentTable({
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <select
-                              value={item.status}
-                              onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                              className={`text-xs font-medium px-2.5 py-1.5 rounded-full border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 ${
-                                item.status === 'draft' ? 'bg-gray-200 text-gray-800' :
-                                item.status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
-                                item.status === 'ready_for_approval' ? 'bg-blue-200 text-blue-800' :
-                                item.status === 'needs_edits' ? 'bg-orange-200 text-orange-800' :
-                                item.status === 'approved' ? 'bg-green-200 text-green-800' :
-                                item.status === 'scheduled' ? 'bg-purple-200 text-purple-800' :
-                                item.status === 'posted' ? 'bg-emerald-200 text-emerald-800' :
-                                'bg-gray-200 text-gray-800'
-                              }`}
-                            >
-                              <option value="draft">Draft</option>
-                              <option value="paused">Paused</option>
-                              <option value="ready_for_approval">Ready for Approval</option>
-                              <option value="needs_edits">Needs Edits</option>
-                              <option value="approved">Approved</option>
-                              <option value="scheduled">Scheduled</option>
-                              <option value="posted">Posted</option>
-                            </select>
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              item.status === 'draft' ? 'bg-gray-200 text-gray-800' :
+                              item.status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
+                              item.status === 'ready_for_approval' ? 'bg-blue-200 text-blue-800' :
+                              item.status === 'needs_edits' ? 'bg-orange-200 text-orange-800' :
+                              item.status === 'approved' ? 'bg-green-200 text-green-800' :
+                              item.status === 'scheduled' ? 'bg-purple-200 text-purple-800' :
+                              item.status === 'posted' ? 'bg-emerald-200 text-emerald-800' :
+                              'bg-gray-200 text-gray-800'
+                            }`}>
+                              {item.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.assigned_to}

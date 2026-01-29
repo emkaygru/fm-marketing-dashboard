@@ -70,21 +70,34 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'draft':
-        return 'bg-gray-200';
+        return 'bg-gray-200 text-gray-800';
       case 'paused':
-        return 'bg-yellow-200';
+        return 'bg-yellow-200 text-yellow-900';
       case 'ready_for_approval':
-        return 'bg-blue-200';
+        return 'bg-blue-200 text-blue-900';
       case 'needs_edits':
-        return 'bg-orange-200';
+        return 'bg-orange-200 text-orange-900';
       case 'approved':
-        return 'bg-green-200';
+        return 'bg-green-200 text-green-900';
       case 'scheduled':
-        return 'bg-purple-200';
+        return 'bg-purple-200 text-purple-900';
       case 'posted':
-        return 'bg-emerald-200';
+        return 'bg-emerald-200 text-emerald-900';
       default:
-        return 'bg-gray-200';
+        return 'bg-gray-200 text-gray-800';
+    }
+  };
+
+  const getPlatformAcronym = (platform: string) => {
+    switch (platform) {
+      case 'Instagram':
+        return 'IG';
+      case 'Facebook':
+        return 'FB';
+      case 'LinkedIn':
+        return 'LI';
+      default:
+        return platform.slice(0, 2).toUpperCase();
     }
   };
 
@@ -167,7 +180,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
                     title={`${item.platform} - ${item.content_needs || 'No description'}`}
                   >
                     <span className="mr-1">{getContentTypeIcon(item.content_type)}</span>
-                    <span className="font-medium">{item.platform.slice(0, 2)}</span>
+                    <span className="font-semibold">{getPlatformAcronym(item.platform)}</span>
                   </div>
                 ))}
                 {dayContent.length > 3 && (
