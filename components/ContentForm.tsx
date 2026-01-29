@@ -115,7 +115,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
                 required
                 value={formData.post_date}
                 onChange={(e) => setFormData({ ...formData, post_date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
               />
             </div>
 
@@ -126,7 +126,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               <select
                 value={formData.content_type}
                 onChange={(e) => setFormData({ ...formData, content_type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
               >
                 <option value="Post">Post</option>
                 <option value="Reel">Reel</option>
@@ -143,7 +143,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               <select
                 value={formData.platform}
                 onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
               >
                 <option value="Instagram">Instagram</option>
                 <option value="Facebook">Facebook</option>
@@ -158,7 +158,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               <select
                 value={formData.assigned_to}
                 onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
               >
                 <option value="Ali">Ali</option>
                 <option value="Beth">Beth</option>
@@ -176,7 +176,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               onChange={(e) => setFormData({ ...formData, content_needs: e.target.value })}
               rows={3}
               placeholder="Describe the content topic or requirements..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 placeholder-gray-400"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               value={formData.asset_link}
               onChange={(e) => setFormData({ ...formData, asset_link: e.target.value })}
               placeholder="https://..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 placeholder-gray-400"
             />
           </div>
 
@@ -202,7 +202,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
               rows={4}
               placeholder="Write the caption for this post..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 placeholder-gray-400"
             />
           </div>
 
@@ -213,7 +213,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
             >
               <option value="draft">Draft</option>
               <option value="paused">Paused</option>

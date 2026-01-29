@@ -46,15 +46,18 @@ export default function SocialCalendarPage() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Content saved successfully:', result);
         setRefreshTrigger((prev) => prev + 1);
         setIsFormOpen(false);
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        console.error('Error response:', error);
+        alert(`Error: ${error.error || 'Failed to save content'}`);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Failed to save content');
+      alert('Failed to save content. Check console for details.');
     }
   };
 
