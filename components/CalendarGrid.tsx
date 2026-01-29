@@ -183,30 +183,30 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
 
       {/* Legend */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex flex-wrap gap-4 text-xs">
+        <div className="flex flex-wrap gap-4 text-xs text-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-gray-200 rounded"></div>
-            <span>Draft</span>
+            <span className="font-medium">Draft</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-200 rounded"></div>
-            <span>Ready</span>
+            <span className="font-medium">Ready</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-orange-200 rounded"></div>
-            <span>Edits</span>
+            <span className="font-medium">Edits</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-green-200 rounded"></div>
-            <span>Approved</span>
+            <span className="font-medium">Approved</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-purple-200 rounded"></div>
-            <span>Scheduled</span>
+            <span className="font-medium">Scheduled</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-emerald-200 rounded"></div>
-            <span>Posted</span>
+            <span className="font-medium">Posted</span>
           </div>
         </div>
       </div>

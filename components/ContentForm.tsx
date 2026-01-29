@@ -68,8 +68,10 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
     // Calculate week_of (Monday of the week)
     const postDate = new Date(formData.post_date);
     const dayOfWeek = postDate.getDay();
-    const diff = postDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const weekOf = new Date(postDate.setDate(diff)).toISOString().split('T')[0];
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Days to subtract/add to get to Monday
+    const monday = new Date(postDate);
+    monday.setDate(postDate.getDate() + diff);
+    const weekOf = monday.toISOString().split('T')[0];
 
     const submitData: any = {
       ...formData,
