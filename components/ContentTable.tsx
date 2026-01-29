@@ -99,13 +99,15 @@ export default function ContentTable({
     }
   };
 
-  // Group content by week
+  // Group content by week - normalize week_of to date string format
   const contentByWeek: Record<string, ContentItem[]> = {};
   content.forEach((item) => {
-    if (!contentByWeek[item.week_of]) {
-      contentByWeek[item.week_of] = [];
+    // Normalize week_of to YYYY-MM-DD format (handle both date strings and timestamps)
+    const weekKey = item.week_of.split('T')[0];
+    if (!contentByWeek[weekKey]) {
+      contentByWeek[weekKey] = [];
     }
-    contentByWeek[item.week_of].push(item);
+    contentByWeek[weekKey].push(item);
   });
 
   // Debug logging
