@@ -71,7 +71,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
     const diff = postDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     const weekOf = new Date(postDate.setDate(diff)).toISOString().split('T')[0];
 
-    const submitData = {
+    const submitData: any = {
       ...formData,
       week_of: weekOf,
       created_by: 'Emily', // This should come from session/auth later
