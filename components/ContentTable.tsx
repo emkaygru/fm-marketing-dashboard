@@ -148,8 +148,18 @@ export default function ContentTable({
           Previous 4 Weeks
         </button>
 
-        <div className="text-sm font-medium text-gray-700">
-          {format(weeks[0], 'MMM d')} - {format(endOfWeek(weeks[3], { weekStartsOn: 1 }), 'MMM d, yyyy')}
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-medium text-gray-700">
+            {format(weeks[0], 'MMM d')} - {format(endOfWeek(weeks[3], { weekStartsOn: 1 }), 'MMM d, yyyy')}
+          </div>
+          {weekOffset !== 0 && (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="px-3 py-1.5 text-xs font-medium text-fm-blue bg-fm-blue/10 rounded-md hover:bg-fm-blue/20 transition-colors"
+            >
+              Today
+            </button>
+          )}
         </div>
 
         <button
