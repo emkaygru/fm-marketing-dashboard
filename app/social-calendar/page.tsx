@@ -1,17 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Plus, Calendar as CalendarIcon, List } from 'lucide-react';
 import ContentTable from '@/components/ContentTable';
+import CalendarGrid from '@/components/CalendarGrid';
 import ContentForm from '@/components/ContentForm';
 import CommentThread from '@/components/CommentThread';
 
 export default function SocialCalendarPage() {
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCommentThreadOpen, setIsCommentThreadOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'duplicate'>('create');
   const [selectedContent, setSelectedContent] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Load view preference from localStorage
+  useEffect(() => {
+    const savedView = localStorage.getItem('socialCalendarView');
+    if (savedView === 'calendar' || savedView === 'table') {
+      setViewMode(savedView);
+    }
+  }, []);
+
+  // Save view preference to localStorage
+  const handleViewModeChange = (mode: 'table' | 'calendar') => {
+    setViewMode(mode);
+    localStorage.setItem('socialCalendarView', mode);
+  };
 
   const handleAddContent = () => {
     setFormMode('create');
@@ -91,26 +108,72 @@ export default function SocialCalendarPage() {
                 Plan and manage your Instagram, Facebook, and LinkedIn content
               </p>
             </div>
-            <button
-              onClick={handleAddContent}
-              className="flex items-center gap-2 px-4 py-2 bg-fm-blue text-white rounded-md hover:bg-fm-navy transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Add Content
-            </button>
+            <div className="flex items-center gap-3">
+              {/* View Toggle */}
+              <div className="flex items-center bg-gray-100 rounded-md p-1">
+                <button
+                  onClick={() => handleViewModeChange('table')}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                    viewMode === 'table'
+                      ? 'bg-white text-fm-blue shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                  Table
+                </button>
+                <button
+                  onClick={() => handleViewModeChange('calendar')}
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                    viewMode === 'calendar'
+                      ? 'bg-white text-fm-blue shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <CalendarIcon className="w-4 h-4" />
+                  Calendar
+                </button>
+              </div>
+
+              <button
+                onClick={handleAddContent}
+                className="flex items-center gap-2 px-4 py-2 bg-fm-blue text-white rounded-md hover:bg-fm-navy transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Add Content
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ContentTable
-          onEdit={handleEditContent}
-          onDelete={handleDeleteContent}
-          onDuplicate={handleDuplicateContent}
-          onComment={handleCommentContent}
-          refreshTrigger={refreshTrigger}
-        />
+        {viewMode === 'table' ? (
+          <ContentTable
+            onEdit={handleEditContent}
+            onDelete={handleDeleteContent}
+            onDuplicate={handleDuplicateContent}
+            onComment={handleCommentContent}
+            refreshTrigger={refreshTrigger}
+          />
+        ) : (
+          <CalendarGrid
+            onDayClick={(date, dayContent) => {
+              // When clicking a day, you could show content details or open form
+              if (dayContent.length > 0) {
+                // Show first content item
+                handleCommentContent(dayContent[0]);
+              } else {
+                // Open form to create content for that day
+                setFormMode('create');
+                setSelectedContent({ post_date: format(date, 'yyyy-MM-dd') });
+                setIsFormOpen(true);
+              }
+            }}
+            refreshTrigger={refreshTrigger}
+          />
+        )}
       </div>
 
       {/* Modals */}
