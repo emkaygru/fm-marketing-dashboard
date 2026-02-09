@@ -110,21 +110,12 @@ export default function ContentTable({
     contentByWeek[weekKey].push(item);
   });
 
-  // Debug logging
-  console.log('ContentTable Debug:', {
-    totalContent: content.length,
-    contentByWeek,
-    weekKeys: Object.keys(contentByWeek)
-  });
-
   // Generate 4 weeks array
   const weeks = [];
   for (let i = 0; i < 4; i++) {
     const weekStart = startOfWeek(addWeeks(new Date(), weekOffset + i), { weekStartsOn: 1 });
     weeks.push(weekStart);
   }
-
-  console.log('Generated weeks:', weeks.map(w => format(w, 'yyyy-MM-dd')));
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
