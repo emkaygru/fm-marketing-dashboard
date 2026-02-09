@@ -56,17 +56,30 @@ export async function POST(request: NextRequest) {
       spam = 0,
       raw_opens,
       raw_clicks,
-      notes
+      notes,
+      ab_subject_a,
+      ab_subject_b,
+      ab_winner,
+      ab_opened_a,
+      ab_opened_b,
+      ab_clicked_a,
+      ab_clicked_b,
+      ab_opens_a,
+      ab_opens_b
     } = body;
 
     const result = await sql`
       INSERT INTO campaigns (
         name, send_date, delivered, opened, clicked, bounce, unsubscribed, spam,
-        raw_opens, raw_clicks, notes
+        raw_opens, raw_clicks, notes,
+        ab_subject_a, ab_subject_b, ab_winner, ab_opened_a, ab_opened_b,
+        ab_clicked_a, ab_clicked_b, ab_opens_a, ab_opens_b
       )
       VALUES (
-        ${name}, ${sendDate}, ${delivered}, ${opened}, ${clicked}, ${bounce}, 
-        ${unsubscribed}, ${spam}, ${raw_opens}, ${raw_clicks}, ${notes}
+        ${name}, ${sendDate}, ${delivered}, ${opened}, ${clicked}, ${bounce},
+        ${unsubscribed}, ${spam}, ${raw_opens}, ${raw_clicks}, ${notes},
+        ${ab_subject_a}, ${ab_subject_b}, ${ab_winner}, ${ab_opened_a}, ${ab_opened_b},
+        ${ab_clicked_a}, ${ab_clicked_b}, ${ab_opens_a}, ${ab_opens_b}
       )
       RETURNING *
     `;
@@ -85,7 +98,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, sendDate, delivered, opened, clicked, bounce, unsubscribed, spam, raw_opens, raw_clicks, notes } = body;
+    const {
+      id, name, sendDate, delivered, opened, clicked, bounce, unsubscribed, spam,
+      raw_opens, raw_clicks, notes,
+      ab_subject_a, ab_subject_b, ab_winner, ab_opened_a, ab_opened_b,
+      ab_clicked_a, ab_clicked_b, ab_opens_a, ab_opens_b
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -96,7 +114,7 @@ export async function PUT(request: NextRequest) {
 
     const result = await sql`
       UPDATE campaigns
-      SET 
+      SET
         name = COALESCE(${name}, name),
         send_date = COALESCE(${sendDate}, send_date),
         delivered = COALESCE(${delivered}, delivered),
@@ -108,6 +126,15 @@ export async function PUT(request: NextRequest) {
         raw_opens = COALESCE(${raw_opens}, raw_opens),
         raw_clicks = COALESCE(${raw_clicks}, raw_clicks),
         notes = COALESCE(${notes}, notes),
+        ab_subject_a = COALESCE(${ab_subject_a}, ab_subject_a),
+        ab_subject_b = COALESCE(${ab_subject_b}, ab_subject_b),
+        ab_winner = COALESCE(${ab_winner}, ab_winner),
+        ab_opened_a = COALESCE(${ab_opened_a}, ab_opened_a),
+        ab_opened_b = COALESCE(${ab_opened_b}, ab_opened_b),
+        ab_clicked_a = COALESCE(${ab_clicked_a}, ab_clicked_a),
+        ab_clicked_b = COALESCE(${ab_clicked_b}, ab_clicked_b),
+        ab_opens_a = COALESCE(${ab_opens_a}, ab_opens_a),
+        ab_opens_b = COALESCE(${ab_opens_b}, ab_opens_b),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *

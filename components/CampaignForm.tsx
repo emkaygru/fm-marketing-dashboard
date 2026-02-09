@@ -14,18 +14,18 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
     name: campaign?.name || '',
     sendDate: campaign?.sendDate || new Date().toISOString().split('T')[0],
     recipients: campaign?.delivered || '',
-    opens: campaign?.rawOpens || '',
-    clicks: campaign?.rawClicks || '',
+    opens: campaign?.raw_opens || '',
+    clicks: campaign?.raw_clicks || '',
     bounce: campaign?.bounce || 0,
     unsubscribed: campaign?.unsubscribed || 0,
     spam: campaign?.spam || 0,
     notes: campaign?.notes || '',
-    hasAbTest: !!campaign?.abResults,
-    subjectA: campaign?.abResults?.subjectA || '',
-    subjectB: campaign?.abResults?.subjectB || '',
-    winner: campaign?.abResults?.winner || 'A',
-    opensA: campaign?.abResults?.opensA || '',
-    opensB: campaign?.abResults?.opensB || '',
+    hasAbTest: !!(campaign?.ab_subject_a || campaign?.ab_subject_b),
+    subjectA: campaign?.ab_subject_a || '',
+    subjectB: campaign?.ab_subject_b || '',
+    winner: campaign?.ab_winner || 'A',
+    opensA: campaign?.ab_opens_a || '',
+    opensB: campaign?.ab_opens_b || '',
   });
 
   const [saving, setSaving] = useState(false);
@@ -102,7 +102,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                 placeholder="e.g., Weekly Newsletter - January 2026"
               />
             </div>
@@ -117,7 +117,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   required
                   value={formData.sendDate}
                   onChange={(e) => setFormData({ ...formData, sendDate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                 />
               </div>
               <div>
@@ -129,7 +129,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   required
                   value={formData.recipients}
                   onChange={(e) => setFormData({ ...formData, recipients: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                   placeholder="e.g., 3420"
                 />
               </div>
@@ -146,7 +146,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   required
                   value={formData.opens}
                   onChange={(e) => setFormData({ ...formData, opens: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                   placeholder="e.g., 856"
                 />
                 <p className="text-xs text-fm-gray mt-1">
@@ -162,7 +162,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   required
                   value={formData.clicks}
                   onChange={(e) => setFormData({ ...formData, clicks: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                   placeholder="e.g., 142"
                 />
                 <p className="text-xs text-fm-gray mt-1">
@@ -181,7 +181,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   type="number"
                   value={formData.bounce}
                   onChange={(e) => setFormData({ ...formData, bounce: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                   placeholder="0"
                 />
               </div>
@@ -193,7 +193,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   type="number"
                   value={formData.unsubscribed}
                   onChange={(e) => setFormData({ ...formData, unsubscribed: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                   placeholder="0"
                 />
               </div>
@@ -205,7 +205,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                   type="number"
                   value={formData.spam}
                   onChange={(e) => setFormData({ ...formData, spam: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                   placeholder="0"
                 />
               </div>
@@ -235,7 +235,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                       type="text"
                       value={formData.subjectA}
                       onChange={(e) => setFormData({ ...formData, subjectA: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                       placeholder="First subject line variant"
                     />
                   </div>
@@ -248,7 +248,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                       type="text"
                       value={formData.subjectB}
                       onChange={(e) => setFormData({ ...formData, subjectB: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                       placeholder="Second subject line variant"
                     />
                   </div>
@@ -261,7 +261,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                       <select
                         value={formData.winner}
                         onChange={(e) => setFormData({ ...formData, winner: e.target.value as 'A' | 'B' })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                       >
                         <option value="A">A</option>
                         <option value="B">B</option>
@@ -275,7 +275,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                         type="number"
                         value={formData.opensA}
                         onChange={(e) => setFormData({ ...formData, opensA: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                         placeholder="0"
                       />
                     </div>
@@ -287,7 +287,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                         type="number"
                         value={formData.opensB}
                         onChange={(e) => setFormData({ ...formData, opensB: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                         placeholder="0"
                       />
                     </div>
@@ -305,7 +305,7 @@ export default function CampaignForm({ campaign, onClose, onSave }: CampaignForm
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fm-blue focus:border-transparent text-gray-900"
                 placeholder="Any additional notes about this campaign..."
               />
             </div>
