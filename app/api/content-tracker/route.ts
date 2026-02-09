@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { startOfWeek, addWeeks, format } from 'date-fns';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // GET - Fetch content tracker overview (auto-populates from other tables)
 export async function GET(request: NextRequest) {
   try {
