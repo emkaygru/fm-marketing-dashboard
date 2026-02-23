@@ -44,9 +44,18 @@ export async function GET(request: NextRequest) {
       ? await sql.query(query, params)
       : await sql.query(query);
 
+    // Normalize date fields to plain YYYY-MM-DD strings.
+    // @vercel/postgres returns DATE columns as full ISO timestamps (e.g. "2026-03-02T00:00:00.000Z")
+    // which causes a 1-day offset when parsed in US time zones.
+    const content = result.rows.map(row => ({
+      ...row,
+      post_date: row.post_date ? String(row.post_date).slice(0, 10) : row.post_date,
+      week_of: row.week_of ? String(row.week_of).slice(0, 10) : row.week_of,
+    }));
+
     return NextResponse.json({
-      content: result.rows,
-      count: result.rows.length
+      content,
+      count: content.length
     });
   } catch (error) {
     console.error('Error fetching social content:', error);

@@ -26,7 +26,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setFormData({
-        post_date: initialData.post_date || '',
+        post_date: initialData.post_date ? String(initialData.post_date).slice(0, 10) : '',
         content_type: initialData.content_type || 'Post',
         platform: initialData.platform || 'Instagram',
         content_needs: initialData.content_needs || '',
