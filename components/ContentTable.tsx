@@ -60,9 +60,9 @@ export default function ContentTable({
   const fetchContent = async () => {
     setLoading(true);
     try {
-      // Calculate date range for 4 weeks starting from weekOffset
+      // Calculate date range for 8 weeks starting from weekOffset (matches dashboard)
       const startDate = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
-      const endDate = endOfWeek(addWeeks(startDate, 3), { weekStartsOn: 1 });
+      const endDate = endOfWeek(addWeeks(startDate, 7), { weekStartsOn: 1 });
 
       const response = await fetch(
         `/api/social-content?startDate=${format(startDate, 'yyyy-MM-dd')}&endDate=${format(endDate, 'yyyy-MM-dd')}`
@@ -122,9 +122,9 @@ export default function ContentTable({
     contentByWeek[weekKey].push(item);
   });
 
-  // Generate 4 weeks array
+  // Generate 8 weeks array (matches dashboard)
   const weeks = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 8; i++) {
     const weekStart = startOfWeek(addWeeks(new Date(), weekOffset + i), { weekStartsOn: 1 });
     weeks.push(weekStart);
   }
@@ -155,16 +155,16 @@ export default function ContentTable({
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setWeekOffset(weekOffset - 4)}
+          onClick={() => setWeekOffset(weekOffset - 8)}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          Previous 4 Weeks
+          Previous 8 Weeks
         </button>
 
         <div className="flex items-center gap-3">
           <div className="text-sm font-medium text-gray-700">
-            {format(weeks[0], 'MMM d')} - {format(endOfWeek(weeks[3], { weekStartsOn: 1 }), 'MMM d, yyyy')}
+            {format(weeks[0], 'MMM d')} – {format(endOfWeek(weeks[7], { weekStartsOn: 1 }), 'MMM d, yyyy')}
           </div>
           {weekOffset !== 0 && (
             <button
@@ -177,10 +177,10 @@ export default function ContentTable({
         </div>
 
         <button
-          onClick={() => setWeekOffset(weekOffset + 4)}
+          onClick={() => setWeekOffset(weekOffset + 8)}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
-          Next 4 Weeks
+          Next 8 Weeks
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
