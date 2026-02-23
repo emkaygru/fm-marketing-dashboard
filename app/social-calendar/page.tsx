@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { format } from 'date-fns';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Calendar as CalendarIcon, List } from 'lucide-react';
@@ -10,7 +10,8 @@ import ContentForm from '@/components/ContentForm';
 import CommentThread from '@/components/CommentThread';
 import DayDetailModal from '@/components/DayDetailModal';
 
-export default function SocialCalendarPage() {
+// Inner component — uses useSearchParams, must be inside <Suspense>
+function SocialCalendarContent() {
   const searchParams = useSearchParams();
   const weekParam = searchParams.get('week') || undefined; // e.g. "2026-03-02" from dashboard "View" link
 
@@ -206,7 +207,6 @@ export default function SocialCalendarPage() {
             });
             if (response.ok) {
               setRefreshTrigger((prev) => prev + 1);
-              // Update the selected day content
               setSelectedDayContent(
                 selectedDayContent.map((c) => (c.id === id ? { ...c, status } : c))
               );
@@ -222,5 +222,14 @@ export default function SocialCalendarPage() {
         }}
       />
     </div>
+  );
+}
+
+// Outer page — wraps inner component in Suspense (required by Next.js for useSearchParams)
+export default function SocialCalendarPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center"><div className="text-gray-500">Loading...</div></div>}>
+      <SocialCalendarContent />
+    </Suspense>
   );
 }
