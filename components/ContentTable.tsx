@@ -60,13 +60,10 @@ export default function ContentTable({
   const fetchContent = async () => {
     setLoading(true);
     try {
-      // Calculate date range for 8 weeks starting from weekOffset (matches dashboard)
-      const startDate = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 });
-      const endDate = endOfWeek(addWeeks(startDate, 7), { weekStartsOn: 1 });
-
-      const response = await fetch(
-        `/api/social-content?startDate=${format(startDate, 'yyyy-MM-dd')}&endDate=${format(endDate, 'yyyy-MM-dd')}`
-      );
+      // Fetch ALL content — grouping by week_of (client-side) determines display.
+      // Previously filtered by post_date range, which caused posts visible on the
+      // dashboard (queried by week_of) to silently disappear in the table view.
+      const response = await fetch('/api/social-content');
       const data = await response.json();
       setContent(data.content || []);
 
