@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 // GET all social content (with optional filtering by date range, status, platform)
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

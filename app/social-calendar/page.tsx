@@ -57,29 +57,20 @@ export default function SocialCalendarPage() {
     setIsCommentThreadOpen(true);
   };
 
-  const handleFormSubmit = async (data: any) => {
-    try {
-      const method = formMode === 'edit' ? 'PUT' : 'POST';
-      const response = await fetch('/api/social-content', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+  const handleFormSubmit = async (data: any): Promise<void> => {
+    const method = formMode === 'edit' ? 'PUT' : 'POST';
+    const response = await fetch('/api/social-content', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Content saved successfully:', result);
-        setRefreshTrigger((prev) => prev + 1);
-        setIsFormOpen(false);
-      } else {
-        const error = await response.json();
-        console.error('Error response:', error);
-        alert(`Error: ${error.error || 'Failed to save content'}`);
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Failed to save content. Check console for details.');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || `Server error ${response.status}`);
     }
+
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleDeleteContent = async (id: number) => {

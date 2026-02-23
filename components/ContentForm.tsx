@@ -6,12 +6,14 @@ import { X } from 'lucide-react';
 interface ContentFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => Promise<void>;
   initialData?: any;
   mode: 'create' | 'edit' | 'duplicate';
 }
 
 export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mode }: ContentFormProps) {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     post_date: '',
     content_type: 'Post',
@@ -62,8 +64,10 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
     }
   }, [mode, initialData, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
+    setSubmitting(true);
 
     // Calculate week_of (Monday of the week)
     // Parse date parts directly to avoid UTC timezone shift (new Date("yyyy-mm-dd") = midnight UTC = previous day in US)
@@ -84,8 +88,14 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
       submitData.id = initialData.id;
     }
 
-    onSubmit(submitData);
-    onClose();
+    try {
+      await onSubmit(submitData);
+      onClose(); // Only close on success
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -228,21 +238,32 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
             </select>
           </div>
 
+          {submitError && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+              {submitError}
+            </div>
+          )}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              disabled={submitting}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-fm-blue rounded-md hover:bg-fm-navy transition-colors"
+              disabled={submitting}
+              className="px-4 py-2 text-sm font-medium text-white bg-fm-blue rounded-md hover:bg-fm-navy transition-colors disabled:opacity-50"
             >
-              {mode === 'create' && 'Create Content'}
-              {mode === 'edit' && 'Save Changes'}
-              {mode === 'duplicate' && 'Create Duplicate'}
+              {submitting ? 'Saving...' : (
+                <>
+                  {mode === 'create' && 'Create Content'}
+                  {mode === 'edit' && 'Save Changes'}
+                  {mode === 'duplicate' && 'Create Duplicate'}
+                </>
+              )}
             </button>
           </div>
         </form>
