@@ -116,17 +116,10 @@ export async function GET(request: NextRequest) {
       ? (((currentEngagementRate - prevEngagementRate) / prevEngagementRate) * 100).toFixed(1)
       : 0;
 
-    // Note: followerGrowth and newFollowers require Instagram Insights API which needs additional permissions
-    // For now, we'll estimate based on typical growth rates
-    const estimatedNewFollowers = Math.floor(Math.random() * (days * 3)) + days;
-    const followerGrowth = igData.followers_count > 0
-      ? ((estimatedNewFollowers / igData.followers_count) * 100).toFixed(1)
-      : 0;
-
     return NextResponse.json({
       followers: igData.followers_count || 0,
-      newFollowers: estimatedNewFollowers, // Estimated - requires Instagram Insights API for actual data
-      followerGrowth: parseFloat(followerGrowth as string),
+      newFollowers: null, // Requires Instagram Insights API with additional permissions
+      followerGrowth: null,
       totalPosts: currentPosts,
       postGrowth: parseFloat(postGrowth as string),
       reach: currentReach,

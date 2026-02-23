@@ -12,6 +12,7 @@ import {
   isSameDay,
   addMonths,
   subMonths,
+  parseISO,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -64,7 +65,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getContentForDay = (day: Date) => {
-    return content.filter((item) => isSameDay(new Date(item.post_date), day));
+    return content.filter((item) => isSameDay(parseISO(item.post_date), day));
   };
 
   const getStatusColor = (status: string) => {

@@ -63,19 +63,48 @@ export async function GET(request: NextRequest) {
       ? ((currentEngagement / currentPosts.length) / followers * 100).toFixed(2)
       : '0.00';
 
+    // Fetch Page Insights for reach/impressions/video views
+    let totalReach = null;
+    let totalVideoViews = null;
+    try {
+      const insightsResponse = await fetch(
+        `https://graph.facebook.com/v19.0/${pageId}/insights?metric=page_impressions_unique,page_video_views&period=day&since=${currentSince}&access_token=${accessToken}`
+      );
+      const insightsData = await insightsResponse.json();
+      if (insightsData.data && !insightsData.error) {
+        insightsData.data.forEach((metric: any) => {
+          const total = metric.values?.reduce((sum: number, v: any) => sum + (v.value || 0), 0) || 0;
+          if (metric.name === 'page_impressions_unique') totalReach = total;
+          if (metric.name === 'page_video_views') totalVideoViews = total;
+        });
+      }
+    } catch {
+      // Insights may require additional permissions - leave as null
+    }
+
+    // Build engagement chart from real post data
+    const engagementByDate: Record<string, number> = {};
+    currentPosts.forEach((post: any) => {
+      const date = new Date(post.created_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const eng = (post.likes?.summary?.total_count || 0) + (post.comments?.summary?.total_count || 0) + (post.shares?.count || 0);
+      engagementByDate[date] = (engagementByDate[date] || 0) + eng;
+    });
+    const engagementData = Object.entries(engagementByDate).map(([date, engagement]) => ({ date, engagement }));
+
     return NextResponse.json({
       followers: followers,
-      newFollowers: Math.floor(Math.random() * (days * 0.5)), // Estimated - requires Page Insights API
-      followerGrowth: 0.3, // Estimated
       pageLikes: followers,
-      pageLikeGrowth: 0.3,
-      reach: 0, // Requires Page Insights API with additional permissions
-      reachGrowth: 0,
+      pageLikeGrowth: null,
+      followerGrowth: null,
+      reach: totalReach,
+      reachGrowth: null,
       engagementRate: parseFloat(engagementRate),
-      engagementRateChange: 0,
-      videoViews: 0, // Requires Page Insights API
-      videoViewGrowth: 0,
-      engagementData: generateMockTimeSeriesData(range, 'engagement'),
+      engagementRateChange: null,
+      videoViews: totalVideoViews,
+      videoViewGrowth: null,
+      totalPosts: currentPosts.length,
+      totalEngagement: currentEngagement,
+      engagementData: engagementData.length > 0 ? engagementData : generateMockTimeSeriesData(range, 'engagement'),
       debug: {
         pageName: pageData.name,
         realFollowers: followers,

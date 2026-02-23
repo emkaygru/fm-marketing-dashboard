@@ -66,12 +66,13 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
     e.preventDefault();
 
     // Calculate week_of (Monday of the week)
-    const postDate = new Date(formData.post_date);
+    // Parse date parts directly to avoid UTC timezone shift (new Date("yyyy-mm-dd") = midnight UTC = previous day in US)
+    const [year, month, day] = formData.post_date.split('-').map(Number);
+    const postDate = new Date(year, month - 1, day); // Local time, no UTC shift
     const dayOfWeek = postDate.getDay();
     const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Days to subtract/add to get to Monday
-    const monday = new Date(postDate);
-    monday.setDate(postDate.getDate() + diff);
-    const weekOf = monday.toISOString().split('T')[0];
+    const monday = new Date(year, month - 1, day + diff);
+    const weekOf = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
 
     const submitData: any = {
       ...formData,

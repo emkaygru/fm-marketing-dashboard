@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { format, addWeeks, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, addWeeks, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
 import { Edit2, Trash2, Copy, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
@@ -227,7 +227,7 @@ export default function ContentTable({
                       weekContent.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {format(new Date(item.post_date), 'MMM d')}
+                            {format(parseISO(item.post_date), 'MMM d')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span title={item.content_type}>

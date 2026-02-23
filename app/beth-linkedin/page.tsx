@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, addWeeks, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface LinkedInContent {
@@ -184,7 +184,7 @@ export default function BethLinkedInPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <span className="text-sm font-medium text-gray-900">
-                                {format(new Date(item.post_date), 'EEEE, MMM d')}
+                                {format(parseISO(item.post_date), 'EEEE, MMM d')}
                               </span>
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
                                 {getStatusLabel(item.status)}

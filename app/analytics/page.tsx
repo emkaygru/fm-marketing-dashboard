@@ -106,10 +106,9 @@ export default function AnalyticsDashboard() {
             <MetricCard
               title="Instagram Followers"
               value={`${instagramData?.followers?.toLocaleString() || 0}`}
-              change={instagramData?.followerGrowth || 0}
+              change={instagramData?.followerGrowth ?? null}
               icon={<Users className="w-5 h-5" />}
               color="orange"
-              subtitle={instagramData?.newFollowers ? `+${instagramData.newFollowers} new` : undefined}
             />
             <MetricCard
               title="Email Subscribers"
@@ -122,10 +121,9 @@ export default function AnalyticsDashboard() {
             <MetricCard
               title="Facebook Followers"
               value={facebookData?.followers?.toLocaleString() || 0}
-              change={facebookData?.followerGrowth || 0}
+              change={facebookData?.followerGrowth ?? null}
               icon={<Users className="w-5 h-5" />}
               color="navy"
-              subtitle={facebookData?.newFollowers ? `+${facebookData.newFollowers} new` : undefined}
             />
           </div>
         </section>
@@ -361,32 +359,32 @@ export default function AnalyticsDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <MetricCard
                   title="Page Likes"
-                  value={facebookData?.pageLikes || 0}
-                  change={facebookData?.pageLikeGrowth || 0}
+                  value={facebookData?.pageLikes?.toLocaleString() || 0}
+                  change={facebookData?.pageLikeGrowth ?? null}
                   icon={<Heart className="w-5 h-5" />}
                   color="navy"
                   compact
                 />
                 <MetricCard
                   title="Post Reach"
-                  value={facebookData?.reach || 0}
-                  change={facebookData?.reachGrowth || 0}
+                  value={facebookData?.reach !== null && facebookData?.reach !== undefined ? facebookData.reach.toLocaleString() : '—'}
+                  change={facebookData?.reachGrowth ?? null}
                   icon={<Eye className="w-5 h-5" />}
                   color="navy"
                   compact
                 />
                 <MetricCard
                   title="Engagement Rate"
-                  value={`${facebookData?.engagementRate || 0}%`}
-                  change={facebookData?.engagementRateChange || 0}
+                  value={facebookData?.engagementRate !== undefined ? `${facebookData.engagementRate}%` : '—'}
+                  change={facebookData?.engagementRateChange ?? null}
                   icon={<TrendingUp className="w-5 h-5" />}
                   color="navy"
                   compact
                 />
                 <MetricCard
                   title="Video Views"
-                  value={facebookData?.videoViews || 0}
-                  change={facebookData?.videoViewGrowth || 0}
+                  value={facebookData?.videoViews !== null && facebookData?.videoViews !== undefined ? facebookData.videoViews.toLocaleString() : '—'}
+                  change={facebookData?.videoViewGrowth ?? null}
                   icon={<MousePointerClick className="w-5 h-5" />}
                   color="navy"
                   compact
