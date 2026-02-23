@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         AND assigned_to = 'Beth'
       `;
 
-      // Get social media content for this week
+      // Get social media content for this week (all platforms)
       const socialResult = await sql`
         SELECT COUNT(*) as total_count,
                SUM(CASE WHEN status = 'posted' THEN 1 ELSE 0 END) as posted_count,
@@ -57,7 +57,6 @@ export async function GET(request: NextRequest) {
                SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft_count
         FROM social_content
         WHERE week_of = ${weekOf}
-        AND platform IN ('Instagram', 'Facebook')
       `;
 
       const blogPost = blogResult.rows[0] || null;

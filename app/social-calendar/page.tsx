@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { useSearchParams } from 'next/navigation';
 import { Plus, Calendar as CalendarIcon, List } from 'lucide-react';
 import ContentTable from '@/components/ContentTable';
 import CalendarGrid from '@/components/CalendarGrid';
@@ -10,6 +11,9 @@ import CommentThread from '@/components/CommentThread';
 import DayDetailModal from '@/components/DayDetailModal';
 
 export default function SocialCalendarPage() {
+  const searchParams = useSearchParams();
+  const weekParam = searchParams.get('week') || undefined; // e.g. "2026-03-02" from dashboard "View" link
+
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCommentThreadOpen, setIsCommentThreadOpen] = useState(false);
@@ -151,6 +155,7 @@ export default function SocialCalendarPage() {
             onDuplicate={handleDuplicateContent}
             onComment={handleCommentContent}
             refreshTrigger={refreshTrigger}
+            initialWeekOf={weekParam}
           />
         ) : (
           <CalendarGrid

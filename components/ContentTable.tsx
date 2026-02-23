@@ -27,6 +27,7 @@ interface ContentTableProps {
   onDuplicate: (content: ContentItem) => void;
   onComment: (content: ContentItem) => void;
   refreshTrigger: number;
+  initialWeekOf?: string; // Optional: jump to a specific week (YYYY-MM-DD)
 }
 
 export default function ContentTable({
@@ -35,11 +36,22 @@ export default function ContentTable({
   onDuplicate,
   onComment,
   refreshTrigger,
+  initialWeekOf,
 }: ContentTableProps) {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, 1 = next week, etc.
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
+
+  // Calculate initial weekOffset from initialWeekOf prop if provided
+  const getInitialOffset = () => {
+    if (!initialWeekOf) return 0;
+    const targetMonday = startOfWeek(parseISO(initialWeekOf), { weekStartsOn: 1 });
+    const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const diffMs = targetMonday.getTime() - currentMonday.getTime();
+    return Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+  };
+
+  const [weekOffset, setWeekOffset] = useState(getInitialOffset);
 
   useEffect(() => {
     fetchContent();
