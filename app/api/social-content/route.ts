@@ -47,12 +47,14 @@ export async function GET(request: NextRequest) {
       : await sql.query(query);
 
     // Normalize date fields to plain YYYY-MM-DD strings.
-    // @vercel/postgres returns DATE columns as full ISO timestamps (e.g. "2026-03-02T00:00:00.000Z")
-    // which causes a 1-day offset when parsed in US time zones.
+    // @vercel/postgres returns DATE columns as JavaScript Date objects.
+    // String(dateObject) = "Thu Jan 29 2026 00:00:00 GMT+0000..." so .slice(0,10) = "Thu Jan 29" (WRONG).
+    // new Date(val).toISOString() = "2026-01-29T00:00:00.000Z" so .slice(0,10) = "2026-01-29" (CORRECT).
+    const toISODate = (val: any) => val ? new Date(val).toISOString().slice(0, 10) : null;
     const content = result.rows.map(row => ({
       ...row,
-      post_date: row.post_date ? String(row.post_date).slice(0, 10) : row.post_date,
-      week_of: row.week_of ? String(row.week_of).slice(0, 10) : row.week_of,
+      post_date: toISODate(row.post_date),
+      week_of: toISODate(row.week_of),
     }));
 
     return NextResponse.json({
