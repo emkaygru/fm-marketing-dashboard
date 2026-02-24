@@ -74,7 +74,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       post_date,
-      week_of,
       content_type,
       platform,
       content_needs,
@@ -85,20 +84,24 @@ export async function POST(request: NextRequest) {
       created_by
     } = body;
 
-    if (!post_date || !week_of) {
+    if (!post_date) {
       return NextResponse.json(
-        { error: 'post_date and week_of are required' },
+        { error: 'post_date is required' },
         { status: 400 }
       );
     }
 
+    // Compute week_of server-side using Postgres date_trunc so it's always the
+    // correct ISO Monday regardless of the client's timezone.
     const result = await sql`
       INSERT INTO social_content (
         post_date, week_of, content_type, platform, content_needs,
         asset_link, caption, status, assigned_to, created_by
       )
       VALUES (
-        ${post_date}, ${week_of}, ${content_type}, ${platform}, ${content_needs},
+        ${post_date},
+        date_trunc('week', ${post_date}::date)::date,
+        ${content_type}, ${platform}, ${content_needs},
         ${asset_link}, ${caption}, ${status}, ${assigned_to}, ${created_by}
       )
       RETURNING *

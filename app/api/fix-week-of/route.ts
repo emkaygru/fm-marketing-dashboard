@@ -3,37 +3,20 @@ import { sql } from '@vercel/postgres';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get all social_content records
+    // Use Postgres date_trunc('week', post_date) to calculate the correct Monday.
+    // This avoids all JS timezone issues — Postgres ISO weeks always start on Monday.
     const result = await sql`
-      SELECT id, post_date FROM social_content
+      UPDATE social_content
+      SET week_of = date_trunc('week', post_date::date)::date
     `;
 
-    let updatedCount = 0;
-
-    // Fix each record's week_of calculation
-    for (const record of result.rows) {
-      const postDate = new Date(record.post_date);
-      const dayOfWeek = postDate.getDay();
-
-      // Calculate Monday of the week
-      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      const monday = new Date(postDate);
-      monday.setDate(postDate.getDate() + diff);
-      const weekOf = monday.toISOString().split('T')[0];
-
-      // Update the record
-      await sql`
-        UPDATE social_content
-        SET week_of = ${weekOf}
-        WHERE id = ${record.id}
-      `;
-
-      updatedCount++;
-    }
+    // Count all rows to report how many were processed
+    const countResult = await sql`SELECT COUNT(*) as count FROM social_content`;
+    const updatedCount = parseInt(countResult.rows[0]?.count || '0');
 
     return NextResponse.json({
       success: true,
-      message: `Fixed ${updatedCount} posts`,
+      message: `Fixed week_of for ${updatedCount} posts`,
       updatedCount
     });
   } catch (error) {
