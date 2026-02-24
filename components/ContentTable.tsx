@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { format, addWeeks, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
+import { format, addWeeks, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+
+// Parse YYYY-MM-DD as local midnight to avoid UTC-to-local timezone shift in US timezones.
+// parseISO("2026-02-02") = UTC midnight = Feb 1 at 7pm EST → displays as Feb 1 (wrong).
+// localDate("2026-02-02") = local midnight = Feb 2 at 12am EST → displays as Feb 2 (correct).
+const localDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 import { Edit2, Trash2, Copy, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
@@ -45,7 +53,7 @@ export default function ContentTable({
   // Calculate initial weekOffset from initialWeekOf prop if provided
   const getInitialOffset = () => {
     if (!initialWeekOf) return 0;
-    const targetMonday = startOfWeek(parseISO(initialWeekOf), { weekStartsOn: 1 });
+    const targetMonday = startOfWeek(localDate(initialWeekOf), { weekStartsOn: 1 });
     const currentMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
     const diffMs = targetMonday.getTime() - currentMonday.getTime();
     return Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
@@ -236,7 +244,7 @@ export default function ContentTable({
                       weekContent.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {format(parseISO(item.post_date), 'MMM d')}
+                            {format(localDate(item.post_date), 'MMM d')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span title={item.content_type}>

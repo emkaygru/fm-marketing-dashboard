@@ -12,9 +12,14 @@ import {
   isSameDay,
   addMonths,
   subMonths,
-  parseISO,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Parse YYYY-MM-DD as local midnight to avoid UTC-to-local timezone shift in US timezones
+const localDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 
 interface ContentItem {
   id: number;
@@ -65,7 +70,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getContentForDay = (day: Date) => {
-    return content.filter((item) => isSameDay(parseISO(item.post_date), day));
+    return content.filter((item) => isSameDay(localDate(item.post_date), day));
   };
 
   const getStatusColor = (status: string) => {

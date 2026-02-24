@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, addWeeks, startOfWeek, parseISO } from 'date-fns';
+import { format, addWeeks, startOfWeek } from 'date-fns';
+
+// Parse YYYY-MM-DD as local midnight to avoid UTC-to-local timezone shift in US timezones
+const localDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 import { ExternalLink, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -201,10 +207,10 @@ export default function DashboardPage() {
                   <tr key={week.week_of} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {format(parseISO(week.week_of), 'MMM d, yyyy')}
+                        {format(localDate(week.week_of), 'MMM d, yyyy')}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Week {Math.ceil((parseISO(week.week_of).getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1}
+                        Week {Math.ceil((localDate(week.week_of).getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1}
                       </div>
                     </td>
 
