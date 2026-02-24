@@ -17,12 +17,12 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
   const [formData, setFormData] = useState({
     post_date: '',
     content_type: 'Post',
-    platform: 'Instagram',
+    platforms: ['Instagram'] as string[], // array — checkboxes in create/duplicate, single-select in edit
     content_needs: '',
     asset_link: '',
     caption: '',
     status: 'draft',
-    assigned_to: 'Ali',
+    assigned_to: 'Emily',
   });
 
   useEffect(() => {
@@ -30,67 +30,88 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
       setFormData({
         post_date: initialData.post_date ? String(initialData.post_date).slice(0, 10) : '',
         content_type: initialData.content_type || 'Post',
-        platform: initialData.platform || 'Instagram',
+        platforms: [initialData.platform || 'Instagram'],
         content_needs: initialData.content_needs || '',
         asset_link: initialData.asset_link || '',
         caption: initialData.caption || '',
         status: initialData.status || 'draft',
-        assigned_to: initialData.assigned_to || 'Ali',
+        assigned_to: initialData.assigned_to || 'Emily',
       });
     } else if (mode === 'duplicate' && initialData) {
-      // For duplicate, copy content but reset date and asset
+      // Keep all content including date and asset — only reset status to draft
       setFormData({
-        post_date: '',
+        post_date: initialData.post_date || '',
         content_type: initialData.content_type || 'Post',
-        platform: initialData.platform || 'Instagram',
+        platforms: [initialData.platform || 'Instagram'],
         content_needs: initialData.content_needs || '',
-        asset_link: '',
+        asset_link: initialData.asset_link || '',
         caption: initialData.caption || '',
         status: 'draft',
-        assigned_to: initialData.assigned_to || 'Ali',
+        assigned_to: initialData.assigned_to || 'Emily',
       });
     } else if (mode === 'create') {
-      // Reset form for new content
+      // Pre-fill date from calendar click if provided (initialData?.post_date)
       setFormData({
-        post_date: '',
+        post_date: initialData?.post_date || '',
         content_type: 'Post',
-        platform: 'Instagram',
+        platforms: ['Instagram'],
         content_needs: '',
         asset_link: '',
         caption: '',
         status: 'draft',
-        assigned_to: 'Ali',
+        assigned_to: 'Emily',
       });
     }
   }, [mode, initialData, isOpen]);
 
+  const togglePlatform = (platform: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      platforms: prev.platforms.includes(platform)
+        ? prev.platforms.filter((p) => p !== platform)
+        : [...prev.platforms, platform],
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.platforms.length === 0) {
+      setSubmitError('Please select at least one platform.');
+      return;
+    }
     setSubmitError(null);
     setSubmitting(true);
 
-    // Calculate week_of (Monday of the week)
-    // Parse date parts directly to avoid UTC timezone shift (new Date("yyyy-mm-dd") = midnight UTC = previous day in US)
+    // Calculate week_of (Monday of the week) using local time to avoid UTC shift
     const [year, month, day] = formData.post_date.split('-').map(Number);
-    const postDate = new Date(year, month - 1, day); // Local time, no UTC shift
+    const postDate = new Date(year, month - 1, day);
     const dayOfWeek = postDate.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Days to subtract/add to get to Monday
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const monday = new Date(year, month - 1, day + diff);
     const weekOf = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
 
-    const submitData: any = {
-      ...formData,
+    const baseData = {
+      post_date: formData.post_date,
+      content_type: formData.content_type,
+      content_needs: formData.content_needs,
+      asset_link: formData.asset_link,
+      caption: formData.caption,
+      status: formData.status,
+      assigned_to: formData.assigned_to,
       week_of: weekOf,
-      created_by: 'Emily', // This should come from session/auth later
+      created_by: 'Emily',
     };
 
-    if (mode === 'edit' && initialData) {
-      submitData.id = initialData.id;
-    }
-
     try {
-      await onSubmit(submitData);
-      onClose(); // Only close on success
+      if (mode === 'edit' && initialData) {
+        // Edit: single record, single platform
+        await onSubmit({ ...baseData, platform: formData.platforms[0], id: initialData.id });
+      } else {
+        // Create / Duplicate: one record per selected platform
+        const payloads = formData.platforms.map((platform) => ({ ...baseData, platform }));
+        await onSubmit(payloads);
+      }
+      onClose();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
     } finally {
@@ -99,6 +120,8 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
   };
 
   if (!isOpen) return null;
+
+  const PLATFORMS = ['Instagram', 'Facebook', 'LinkedIn'];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -149,19 +172,36 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            {/* Platform — checkboxes for create/duplicate, single select for edit */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Platform
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Platform{mode !== 'edit' ? '(s)' : ''}
               </label>
-              <select
-                value={formData.platform}
-                onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
-              >
-                <option value="Instagram">Instagram</option>
-                <option value="Facebook">Facebook</option>
-                <option value="LinkedIn">LinkedIn</option>
-              </select>
+              {mode === 'edit' ? (
+                <select
+                  value={formData.platforms[0] || 'Instagram'}
+                  onChange={(e) => setFormData({ ...formData, platforms: [e.target.value] })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
+                >
+                  {PLATFORMS.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="flex flex-col gap-2 pt-1">
+                  {PLATFORMS.map((p) => (
+                    <label key={p} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={formData.platforms.includes(p)}
+                        onChange={() => togglePlatform(p)}
+                        className="w-4 h-4 rounded border-gray-300 text-fm-blue focus:ring-fm-blue"
+                      />
+                      <span className="text-sm text-gray-700">{p}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -173,9 +213,9 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
                 onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
               >
+                <option value="Emily">Emily</option>
                 <option value="Ali">Ali</option>
                 <option value="Beth">Beth</option>
-                <option value="Emily">Emily</option>
               </select>
             </div>
           </div>
@@ -238,11 +278,18 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
             </select>
           </div>
 
+          {mode !== 'edit' && formData.platforms.length > 1 && (
+            <div className="px-4 py-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+              This will create <strong>{formData.platforms.length} separate posts</strong> — one for each selected platform ({formData.platforms.join(', ')}).
+            </div>
+          )}
+
           {submitError && (
             <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
               {submitError}
             </div>
           )}
+
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
@@ -259,9 +306,9 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
             >
               {submitting ? 'Saving...' : (
                 <>
-                  {mode === 'create' && 'Create Content'}
+                  {mode === 'create' && (formData.platforms.length > 1 ? `Create ${formData.platforms.length} Posts` : 'Create Content')}
                   {mode === 'edit' && 'Save Changes'}
-                  {mode === 'duplicate' && 'Create Duplicate'}
+                  {mode === 'duplicate' && (formData.platforms.length > 1 ? `Create ${formData.platforms.length} Duplicates` : 'Create Duplicate')}
                 </>
               )}
             </button>

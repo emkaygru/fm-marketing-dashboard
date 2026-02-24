@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, FileText, BarChart3, Linkedin, LayoutDashboard } from 'lucide-react';
+import { Calendar, FileText, BarChart3, Linkedin, LayoutDashboard, BookOpen } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export default function Navigation() {
     { href: '/social-calendar', label: 'Social Calendar', icon: Calendar },
     { href: '/blog-posts', label: 'Blog Posts', icon: FileText },
     { href: '/beth-linkedin', label: "Beth's LinkedIn", icon: Linkedin },
+    { href: '/caption-bank', label: 'Caption Bank', icon: BookOpen },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 

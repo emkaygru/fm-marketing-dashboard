@@ -62,17 +62,22 @@ function SocialCalendarContent() {
     setIsCommentThreadOpen(true);
   };
 
-  const handleFormSubmit = async (data: any): Promise<void> => {
+  const handleFormSubmit = async (data: any | any[]): Promise<void> => {
+    // data is an array when creating/duplicating with multiple platforms selected
+    const payloads: any[] = Array.isArray(data) ? data : [data];
     const method = formMode === 'edit' ? 'PUT' : 'POST';
-    const response = await fetch('/api/social-content', {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error || `Server error ${response.status}`);
+    for (const payload of payloads) {
+      const response = await fetch('/api/social-content', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || `Server error ${response.status}`);
+      }
     }
 
     setRefreshTrigger((prev) => prev + 1);
