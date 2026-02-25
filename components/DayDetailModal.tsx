@@ -44,16 +44,13 @@ export default function DayDetailModal({
 }: DayDetailModalProps) {
   if (!isOpen || !date) return null;
 
-  const getContentTypeIcon = (type: string) => {
+  const getTypeColor = (type: string): string => {
     switch (type) {
-      case 'Post':
-        return '📸';
-      case 'Reel':
-        return '🎬';
-      case 'Story':
-        return '📖';
-      default:
-        return '📄';
+      case 'Post':     return 'bg-violet-100 text-violet-800';
+      case 'Reel':     return 'bg-rose-100 text-rose-800';
+      case 'Story':    return 'bg-amber-100 text-amber-800';
+      case 'Carousel': return 'bg-cyan-100 text-cyan-800';
+      default:         return 'bg-slate-100 text-slate-700';
     }
   };
 
@@ -102,12 +99,12 @@ export default function DayDetailModal({
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{getContentTypeIcon(item.content_type)}</span>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getTypeColor(item.content_type)}`}>
+                        {item.content_type || '—'}
+                      </span>
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-gray-900">{item.platform}</span>
-                          <span className="text-sm text-gray-500">•</span>
-                          <span className="text-sm text-gray-500">{item.content_type}</span>
                         </div>
                         <p className="text-xs text-gray-500 mt-0.5">
                           Assigned to: {item.assigned_to}

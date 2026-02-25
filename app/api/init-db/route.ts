@@ -147,6 +147,20 @@ export async function GET(request: NextRequest) {
       ON CONFLICT DO NOTHING
     `;
 
+    // Create caption_bank table for saved/manual captions
+    await sql`
+      CREATE TABLE IF NOT EXISTS caption_bank (
+        id BIGSERIAL PRIMARY KEY,
+        text TEXT NOT NULL,
+        platform VARCHAR(20),
+        source VARCHAR(50) DEFAULT 'manual',
+        notes TEXT,
+        original_date DATE,
+        original_permalink TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
     // Create indexes for better performance
     await sql`CREATE INDEX IF NOT EXISTS idx_social_content_post_date ON social_content(post_date)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_social_content_week_of ON social_content(week_of)`;
@@ -162,7 +176,8 @@ export async function GET(request: NextRequest) {
         'content_comments',
         'blog_posts',
         'content_tracker',
-        'campaigns'
+        'campaigns',
+        'caption_bank'
       ]
     });
 

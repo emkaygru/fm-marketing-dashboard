@@ -107,16 +107,25 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
     }
   };
 
-  const getContentTypeIcon = (type: string) => {
+  // Left-border color on calendar blocks to indicate post type (distinct from status background)
+  const getTypeBorderColor = (type: string): string => {
     switch (type) {
-      case 'Post':
-        return '📸';
-      case 'Reel':
-        return '🎬';
-      case 'Story':
-        return '📖';
-      default:
-        return '📄';
+      case 'Post':     return 'border-l-violet-500';
+      case 'Reel':     return 'border-l-rose-500';
+      case 'Story':    return 'border-l-amber-500';
+      case 'Carousel': return 'border-l-cyan-500';
+      default:         return 'border-l-slate-400';
+    }
+  };
+
+  // Short abbreviation for type (used in tight calendar blocks)
+  const getTypeAbbr = (type: string): string => {
+    switch (type) {
+      case 'Post':     return 'P';
+      case 'Reel':     return 'R';
+      case 'Story':    return 'S';
+      case 'Carousel': return 'C';
+      default:         return '?';
     }
   };
 
@@ -182,10 +191,10 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
                 {dayContent.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
-                    className={`text-xs px-1.5 py-0.5 rounded ${getStatusColor(item.status)} truncate`}
-                    title={`${item.platform} - ${item.content_needs || 'No description'}`}
+                    className={`text-xs px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${getTypeBorderColor(item.content_type)} truncate`}
+                    title={`${item.content_type} · ${item.platform} — ${item.content_needs || 'No description'}`}
                   >
-                    <span className="mr-1">{getContentTypeIcon(item.content_type)}</span>
+                    <span className="font-bold mr-0.5 opacity-70">{getTypeAbbr(item.content_type)}</span>
                     <span className="font-semibold">{getPlatformAcronym(item.platform)}</span>
                   </div>
                 ))}
@@ -201,32 +210,25 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
       </div>
 
       {/* Legend */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex flex-wrap gap-4 text-xs text-gray-700">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-200 rounded"></div>
-            <span className="font-medium">Draft</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-200 rounded"></div>
-            <span className="font-medium">Ready</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-orange-200 rounded"></div>
-            <span className="font-medium">Edits</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-200 rounded"></div>
-            <span className="font-medium">Approved</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-purple-200 rounded"></div>
-            <span className="font-medium">Scheduled</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-emerald-200 rounded"></div>
-            <span className="font-medium">Posted</span>
-          </div>
+      <div className="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+        {/* Status Legend */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-700">
+          <span className="font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-gray-200 rounded"></div><span>Draft</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-yellow-200 rounded"></div><span>Paused</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-blue-200 rounded"></div><span>Ready</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-orange-200 rounded"></div><span>Edits</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-green-200 rounded"></div><span>Approved</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-purple-200 rounded"></div><span>Scheduled</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-emerald-200 rounded"></div><span>Posted</span></div>
+        </div>
+        {/* Type Legend (left border color) */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-700">
+          <span className="font-semibold text-gray-500 uppercase tracking-wide">Type:</span>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-gray-100 rounded border-l-[3px] border-l-violet-500"></div><span>Post</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-gray-100 rounded border-l-[3px] border-l-rose-500"></div><span>Reel</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-gray-100 rounded border-l-[3px] border-l-amber-500"></div><span>Story</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-gray-100 rounded border-l-[3px] border-l-cyan-500"></div><span>Carousel</span></div>
         </div>
       </div>
     </div>

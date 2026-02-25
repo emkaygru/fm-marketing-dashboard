@@ -160,6 +160,12 @@ function SocialCalendarContent() {
             onDelete={handleDeleteContent}
             onDuplicate={handleDuplicateContent}
             onComment={handleCommentContent}
+            onRowClick={(item) => {
+              const [y, m, d] = item.post_date.split('-').map(Number);
+              setSelectedDate(new Date(y, m - 1, d));
+              setSelectedDayContent([item]);
+              setIsDayDetailOpen(true);
+            }}
             refreshTrigger={refreshTrigger}
             initialWeekOf={weekParam}
           />

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { format, addWeeks, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, addWeeks, startOfWeek, endOfWeek } from 'date-fns';
 
 // Parse YYYY-MM-DD as local midnight to avoid UTC-to-local timezone shift in US timezones.
 // parseISO("2026-02-02") = UTC midnight = Feb 1 at 7pm EST → displays as Feb 1 (wrong).
@@ -34,15 +34,28 @@ interface ContentTableProps {
   onDelete: (id: number) => void;
   onDuplicate: (content: ContentItem) => void;
   onComment: (content: ContentItem) => void;
+  onRowClick?: (content: ContentItem) => void;
   refreshTrigger: number;
   initialWeekOf?: string; // Optional: jump to a specific week (YYYY-MM-DD)
 }
+
+// Color-coded type badges — distinct from status colors (violet/rose/amber/cyan vs gray/blue/green/etc.)
+const getTypeColor = (type: string): string => {
+  switch (type) {
+    case 'Post':     return 'bg-violet-100 text-violet-800';
+    case 'Reel':     return 'bg-rose-100 text-rose-800';
+    case 'Story':    return 'bg-amber-100 text-amber-800';
+    case 'Carousel': return 'bg-cyan-100 text-cyan-800';
+    default:         return 'bg-slate-100 text-slate-700';
+  }
+};
 
 export default function ContentTable({
   onEdit,
   onDelete,
   onDuplicate,
   onComment,
+  onRowClick,
   refreshTrigger,
   initialWeekOf,
 }: ContentTableProps) {
@@ -134,19 +147,6 @@ export default function ContentTable({
     weeks.push(weekStart);
   }
 
-  const getContentTypeIcon = (type: string) => {
-    switch (type) {
-      case 'Post':
-        return '📸';
-      case 'Reel':
-        return '🎬';
-      case 'Story':
-        return '📖';
-      default:
-        return '📄';
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -188,6 +188,21 @@ export default function ContentTable({
           Next 8 Weeks
           <ChevronRight className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Type Legend */}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+        <span className="font-medium text-gray-500 uppercase tracking-wide">Type:</span>
+        {[
+          { label: 'Post', color: 'bg-violet-100 text-violet-800' },
+          { label: 'Reel', color: 'bg-rose-100 text-rose-800' },
+          { label: 'Story', color: 'bg-amber-100 text-amber-800' },
+          { label: 'Carousel', color: 'bg-cyan-100 text-cyan-800' },
+        ].map(({ label, color }) => (
+          <span key={label} className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${color}`}>
+            {label}
+          </span>
+        ))}
       </div>
 
       {/* Content Table */}
@@ -242,13 +257,17 @@ export default function ContentTable({
                       </tr>
                     ) : (
                       weekContent.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50">
+                        <tr
+                          key={item.id}
+                          onClick={() => onRowClick?.(item)}
+                          className={`hover:bg-blue-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {format(localDate(item.post_date), 'MMM d')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span title={item.content_type}>
-                              {getContentTypeIcon(item.content_type)}
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeColor(item.content_type)}`}>
+                              {item.content_type || '—'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -263,6 +282,7 @@ export default function ContentTable({
                                 href={item.asset_link}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
                                 className="text-fm-blue hover:text-fm-navy underline"
                               >
                                 View
@@ -289,7 +309,10 @@ export default function ContentTable({
                             {item.assigned_to}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
+                            <div
+                              className="flex items-center justify-end gap-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <button
                                 onClick={() => onComment(item)}
                                 className="text-gray-400 hover:text-fm-blue relative"
