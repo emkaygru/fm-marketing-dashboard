@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const accessToken = process.env.META_ACCESS_TOKEN || process.env.FACEBOOK_ACCESS_TOKEN;
-  const pageId = process.env.FACEBOOK_PAGE_ID;
+  const pageId = process.env.FACEBOOK_PAGE_ID || process.env.META_PAGE_ID;
 
   if (!accessToken || !pageId) {
     return NextResponse.json({ error: 'Missing Facebook/Meta credentials' }, { status: 500 });
@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
   try {
     let url = `https://graph.facebook.com/v19.0/${pageId}/posts?fields=message,created_time,permalink_url,likes.summary(true)&limit=100&access_token=${accessToken}`;
 
-    // Page through all results (up to 500 posts)
     let pageCount = 0;
     while (url && pageCount < 5) {
       const res = await fetch(url);
@@ -49,12 +48,16 @@ export async function GET(request: NextRequest) {
 
   // ── Instagram posts ───────────────────────────────────────────────────────
   try {
-    // Step 1: Get the Instagram Business Account ID connected to the FB Page
-    const pageRes = await fetch(
-      `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${accessToken}`
-    );
-    const pageData = await pageRes.json();
-    const igAccountId = pageData.instagram_business_account?.id;
+    // Use INSTAGRAM_BUSINESS_ACCOUNT_ID directly if set, otherwise look it up from the FB Page
+    let igAccountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || null;
+
+    if (!igAccountId) {
+      const pageRes = await fetch(
+        `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${accessToken}`
+      );
+      const pageData = await pageRes.json();
+      igAccountId = pageData.instagram_business_account?.id || null;
+    }
 
     if (igAccountId) {
       let igUrl = `https://graph.facebook.com/v19.0/${igAccountId}/media?fields=caption,media_type,timestamp,permalink,like_count&limit=100&access_token=${accessToken}`;

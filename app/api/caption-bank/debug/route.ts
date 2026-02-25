@@ -20,10 +20,13 @@ export async function GET() {
     }, { status: 500 });
   }
 
+  const igAccountIdFromEnv = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || null;
+
   const result: any = {
     credentials: { pageId, tokenLength: accessToken.length },
+    instagram_account_id_from_env: igAccountIdFromEnv,
     facebook: null,
-    instagram_account_id: null,
+    instagram_account_id: igAccountIdFromEnv,
     instagram: null,
   };
 
@@ -48,18 +51,20 @@ export async function GET() {
     result.facebook = { fetch_error: err.message };
   }
 
-  // Check Instagram business account link
-  try {
-    const pageRes = await fetch(
-      `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account,name&access_token=${accessToken}`
-    );
-    const pageData = await pageRes.json();
-    result.instagram_account_id = pageData.instagram_business_account?.id || null;
-    result.facebook_page_name = pageData.name || null;
-    result.instagram_link_error = pageData.error || null;
-  } catch (err: any) {
-    result.instagram_account_id = null;
-    result.instagram_link_error = err.message;
+  // Try to look up Instagram account from FB page if not in env
+  if (!igAccountIdFromEnv) {
+    try {
+      const pageRes = await fetch(
+        `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account,name&access_token=${accessToken}`
+      );
+      const pageData = await pageRes.json();
+      result.instagram_account_id = pageData.instagram_business_account?.id || null;
+      result.facebook_page_name = pageData.name || null;
+      result.instagram_link_error = pageData.error || null;
+    } catch (err: any) {
+      result.instagram_account_id = null;
+      result.instagram_link_error = err.message;
+    }
   }
 
   // Check Instagram media (first 5 only)
