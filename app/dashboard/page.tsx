@@ -99,7 +99,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/post-analytics?limit=200');
       const data = await res.json();
-      const rows: any[] = data.analytics || [];
+      const rows: any[] = data.posts || [];
       if (rows.length === 0) { setReportSnapshot({ reportMonth: null, totalReach: 0, totalViews: 0, totalLikes: 0, topPlatform: null }); return; }
       // Find latest report_month
       const latestMonth = rows.reduce((best: string, r: any) => r.report_month > best ? r.report_month : best, rows[0].report_month);

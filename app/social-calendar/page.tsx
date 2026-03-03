@@ -152,45 +152,45 @@ function SocialCalendarContent() {
       {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Social Calendar</h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Social Calendar</h1>
+              <p className="hidden sm:block mt-1 text-sm text-gray-500">
                 Plan and manage your Instagram, Facebook, and LinkedIn content
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* View Toggle */}
               <div className="flex items-center bg-gray-100 rounded-md p-1">
                 <button
                   onClick={() => handleViewModeChange('table')}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded transition-colors ${
                     viewMode === 'table'
                       ? 'bg-white text-fm-blue shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <List className="w-4 h-4" />
-                  Table
+                  <span className="hidden sm:inline">Table</span>
                 </button>
                 <button
                   onClick={() => handleViewModeChange('calendar')}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium rounded transition-colors ${
                     viewMode === 'calendar'
                       ? 'bg-white text-fm-blue shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <CalendarIcon className="w-4 h-4" />
-                  Calendar
+                  <span className="hidden sm:inline">Calendar</span>
                 </button>
               </div>
 
               <button
                 onClick={handleAddContent}
-                className="flex items-center gap-2 px-4 py-2 bg-fm-blue text-white rounded-md hover:bg-fm-navy transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-fm-blue text-white rounded-md hover:bg-fm-navy transition-colors text-sm font-medium whitespace-nowrap"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Add Content
               </button>
             </div>
