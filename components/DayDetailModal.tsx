@@ -51,10 +51,10 @@ type AssetPreview =
 
 const getAssetPreview = (url: string): AssetPreview => {
   if (!url) return null;
-  // Google Drive — extract file ID from /file/d/{id}/ pattern
-  const gdriveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  // Google Drive — extract file ID from /file/d/{id}/ or open?id={id} patterns
+  const gdriveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (gdriveMatch) {
-    return { type: 'gdrive', src: `https://drive.google.com/thumbnail?id=${gdriveMatch[1]}&sz=w400` };
+    return { type: 'gdrive', src: `https://drive.google.com/uc?export=view&id=${gdriveMatch[1]}` };
   }
   // Direct image URL
   if (/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)) {

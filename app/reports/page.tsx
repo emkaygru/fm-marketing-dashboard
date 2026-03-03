@@ -153,9 +153,11 @@ function transformFbVideo(rows: any[]): any[] {
   });
 }
 
-// ── Metric cell helper ────────────────────────────────────────────────────────
-const Num = ({ v, dash = false }: { v: number; dash?: boolean }) =>
-  dash && v === 0 ? <span className="text-gray-300">—</span> : <>{v.toLocaleString()}</>;
+// ── Metric cell helper — coerce to Number since Postgres returns DECIMAL as string ──
+const Num = ({ v, dash = false }: { v: any; dash?: boolean }) => {
+  const n = Number(v ?? 0);
+  return (dash && n === 0) ? <span className="text-gray-300">—</span> : <>{n.toLocaleString()}</>;
+};
 
 // ── Sort icon ────────────────────────────────────────────────────────────────
 const SortIcon = ({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) => {
@@ -220,72 +222,98 @@ export default function ReportsPage() {
     fetchPosts(selectedMonth, p);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Parse a single File → array of rows ready for the API
+  const parseFile = (file: File): Promise<{ format: CsvFormat; rows: any[] }> =>
+    new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (result) => {
+          const headers = result.meta.fields || [];
+          const fmt = detectFormat(headers);
+          if (fmt === 'unknown') { resolve({ format: fmt, rows: [] }); return; }
+
+          let transformed: any[] = [];
+          if (fmt === 'ig_posts') transformed = transformIgPosts(result.data as any[]);
+          else if (fmt === 'fb_posts') transformed = transformFbPosts(result.data as any[]);
+          else if (fmt === 'fb_video') transformed = transformFbVideo(result.data as any[]);
+          transformed = transformed.filter((r) => r.post_id && r.post_id !== 'undefined');
+          resolve({ format: fmt, rows: transformed });
+        },
+        error: () => reject(new Error('Could not parse CSV file.')),
+      });
+    });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     setUploadMsg(null);
     setDetectedFormat(null);
+    setUploading(true);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (result) => {
-        const headers = result.meta.fields || [];
-        const format = detectFormat(headers);
-        setDetectedFormat(format);
+    let totalInserted = 0;
+    let totalUpdated = 0;
+    const errors: string[] = [];
+    const formats = new Set<CsvFormat>();
 
-        if (format === 'unknown') {
-          setUploadMsg({ type: 'error', text: 'Could not detect CSV format. Please use an Instagram or Facebook export.' });
-          return;
-        }
-
-        let transformed: any[] = [];
-        if (format === 'ig_posts') transformed = transformIgPosts(result.data as any[]);
-        else if (format === 'fb_posts') transformed = transformFbPosts(result.data as any[]);
-        else if (format === 'fb_video') transformed = transformFbVideo(result.data as any[]);
-
-        // Filter out rows with no post_id
-        transformed = transformed.filter((r) => r.post_id && r.post_id !== 'undefined');
-
-        if (transformed.length === 0) {
-          setUploadMsg({ type: 'error', text: 'No valid rows found in CSV.' });
-          return;
-        }
-
-        setUploading(true);
+    try {
+      for (const file of files) {
+        let parsed: { format: CsvFormat; rows: any[] };
         try {
-          const res = await fetch('/api/post-analytics', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rows: transformed }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            setUploadMsg({ type: 'success', text: data.message });
-            await fetchPosts(selectedMonth, selectedPlatform);
-          } else {
-            setUploadMsg({ type: 'error', text: data.error || 'Upload failed.' });
-          }
-        } catch (err) {
-          setUploadMsg({ type: 'error', text: 'Network error during upload.' });
-        } finally {
-          setUploading(false);
-          if (fileRef.current) fileRef.current.value = '';
+          parsed = await parseFile(file);
+        } catch {
+          errors.push(`"${file.name}": could not parse`);
+          continue;
         }
-      },
-      error: () => {
-        setUploadMsg({ type: 'error', text: 'Could not parse CSV file.' });
-      },
-    });
+        formats.add(parsed.format);
+
+        if (parsed.format === 'unknown' || parsed.rows.length === 0) {
+          errors.push(`"${file.name}": unknown format or no valid rows`);
+          continue;
+        }
+
+        const res = await fetch('/api/post-analytics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: parsed.rows }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          totalInserted += data.inserted || 0;
+          totalUpdated += data.updated || 0;
+        } else {
+          errors.push(`"${file.name}": ${data.error || 'upload failed'}`);
+        }
+      }
+
+      // Show detected formats
+      const fmtLabels = Array.from(formats).filter(f => f !== 'unknown').map(f => FORMAT_LABELS[f]);
+      if (fmtLabels.length) setDetectedFormat(Array.from(formats).find(f => f !== 'unknown') || null);
+
+      if (totalInserted > 0 || totalUpdated > 0) {
+        const msg = `Imported ${files.length} file${files.length > 1 ? 's' : ''}: ${totalInserted} new, ${totalUpdated} updated${errors.length ? ` (${errors.length} error${errors.length > 1 ? 's' : ''})` : ''}`;
+        setUploadMsg({ type: 'success', text: msg });
+        await fetchPosts(selectedMonth, selectedPlatform);
+      } else {
+        setUploadMsg({ type: 'error', text: errors.length > 0 ? errors.join(' · ') : 'No rows imported.' });
+      }
+    } catch {
+      setUploadMsg({ type: 'error', text: 'Unexpected error during upload.' });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
-  // Sort
+  // Sort — Number() coerce since Postgres returns DECIMAL/INTEGER as strings
   const sorted = [...posts].sort((a, b) => {
-    const av = a[sortKey] ?? 0;
-    const bv = b[sortKey] ?? 0;
-    if (av < bv) return sortDir === 'asc' ? -1 : 1;
-    if (av > bv) return sortDir === 'asc' ? 1 : -1;
-    return 0;
+    const av = Number(a[sortKey] ?? 0);
+    const bv = Number(b[sortKey] ?? 0);
+    // Fall back to string compare for non-numeric fields (e.g. publish_time, post_type)
+    const as = String(a[sortKey] ?? '');
+    const bs = String(b[sortKey] ?? '');
+    const cmp = isNaN(av) || isNaN(bv) ? as.localeCompare(bs) : av - bv;
+    return sortDir === 'asc' ? cmp : -cmp;
   });
 
   const handleSort = (key: SortKey) => {
@@ -293,15 +321,15 @@ export default function ReportsPage() {
     else { setSortKey(key); setSortDir('desc'); }
   };
 
-  // Summary totals
+  // Summary totals — coerce to Number for same reason
   const totals = posts.reduce(
     (acc, p) => ({
-      views: acc.views + (p.views || 0),
-      reach: acc.reach + (p.reach || 0),
-      likes: acc.likes + (p.likes || 0),
-      comments_count: acc.comments_count + (p.comments_count || 0),
-      shares: acc.shares + (p.shares || 0),
-      saves: acc.saves + (p.saves || 0),
+      views: acc.views + Number(p.views || 0),
+      reach: acc.reach + Number(p.reach || 0),
+      likes: acc.likes + Number(p.likes || 0),
+      comments_count: acc.comments_count + Number(p.comments_count || 0),
+      shares: acc.shares + Number(p.shares || 0),
+      saves: acc.saves + Number(p.saves || 0),
     }),
     { views: 0, reach: 0, likes: 0, comments_count: 0, shares: 0, saves: 0 }
   );
@@ -347,6 +375,7 @@ export default function ReportsPage() {
                   ref={fileRef}
                   type="file"
                   accept=".csv"
+                  multiple
                   className="hidden"
                   onChange={handleFileChange}
                   disabled={uploading}
@@ -363,7 +392,7 @@ export default function ReportsPage() {
                 </span>
               )}
               <p className="text-xs text-gray-400 max-w-xs text-right">
-                Supports: IG Posts, FB Posts, FB Video Detail exports
+                Select multiple CSVs at once (IG Posts, FB Posts, FB Video Detail)
               </p>
             </div>
           </div>
@@ -499,8 +528,8 @@ export default function ReportsPage() {
                         <Num v={post.saves} dash={post.platform === 'facebook'} />
                       </td>
                       <td className="px-3 py-3 text-right text-gray-700 whitespace-nowrap">
-                        {post.avg_seconds_viewed > 0
-                          ? `${post.avg_seconds_viewed.toFixed(1)}s`
+                        {Number(post.avg_seconds_viewed) > 0
+                          ? `${Number(post.avg_seconds_viewed).toFixed(1)}s`
                           : <span className="text-gray-300">—</span>}
                       </td>
                       <td className="px-3 py-3 text-center">

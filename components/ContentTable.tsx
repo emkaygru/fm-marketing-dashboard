@@ -65,6 +65,7 @@ export default function ContentTable({
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [confirmingBulkDelete, setConfirmingBulkDelete] = useState(false);
+  const [expandedCaptions, setExpandedCaptions] = useState<Set<number>>(new Set());
 
   // Calculate initial weekOffset from initialWeekOf prop if provided
   const getInitialOffset = () => {
@@ -153,6 +154,14 @@ export default function ContentTable({
     setSelectedIds((prev) => {
       const next = new Set(prev);
       weekIds.forEach((id) => allSelected ? next.delete(id) : next.add(id));
+      return next;
+    });
+  };
+
+  const toggleCaption = (id: number) => {
+    setExpandedCaptions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -336,10 +345,28 @@ export default function ContentTable({
                         </span>
                       </div>
 
-                      {/* Row 2: topic */}
-                      {item.content_needs && (
-                        <p className="text-sm text-gray-700 line-clamp-2 mb-2">{item.content_needs}</p>
-                      )}
+                      {/* Row 2: caption or topic */}
+                      {(item.caption || item.content_needs) && (() => {
+                        const text = item.caption || item.content_needs || '';
+                        const isLong = text.length > 120;
+                        const isExpanded = expandedCaptions.has(item.id);
+                        return (
+                          <div className="mb-2">
+                            {item.caption && (
+                              <span className="inline-block mb-1 text-xs font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">caption</span>
+                            )}
+                            <p className={`text-sm text-gray-700 ${isExpanded ? '' : 'line-clamp-2'}`}>{text}</p>
+                            {isLong && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleCaption(item.id); }}
+                                className="text-xs text-fm-blue hover:underline mt-0.5"
+                              >
+                                {isExpanded ? 'Show less' : 'Show more'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Row 3: actions */}
                       <div
@@ -413,7 +440,7 @@ export default function ContentTable({
                   Platform
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Content / Topic
+                  Caption / Topic
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Asset
@@ -483,7 +510,29 @@ export default function ContentTable({
                             {item.platform}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
-                            <div className="line-clamp-2">{item.content_needs || '-'}</div>
+                            {(() => {
+                              const text = item.caption || item.content_needs || '-';
+                              const isLong = text.length > 120;
+                              const isExpanded = expandedCaptions.has(item.id);
+                              return (
+                                <div>
+                                  {item.caption && (
+                                    <span className="inline-block mb-1 text-xs font-medium text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded">caption</span>
+                                  )}
+                                  <p className={isExpanded ? '' : 'line-clamp-2'}>
+                                    {text}
+                                  </p>
+                                  {isLong && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); toggleCaption(item.id); }}
+                                      className="text-xs text-fm-blue hover:underline mt-0.5"
+                                    >
+                                      {isExpanded ? 'Show less' : 'Show more'}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {item.asset_link ? (
