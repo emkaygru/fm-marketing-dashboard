@@ -161,6 +161,48 @@ export async function GET(request: NextRequest) {
       )
     `;
 
+    // Create notifications table (for Victoria's comment notifications)
+    await sql`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id          BIGSERIAL PRIMARY KEY,
+        type        VARCHAR(50) DEFAULT 'comment',
+        message     TEXT NOT NULL,
+        content_id  BIGINT REFERENCES social_content(id) ON DELETE CASCADE,
+        comment_id  BIGINT REFERENCES content_comments(id) ON DELETE CASCADE,
+        author_name VARCHAR(100),
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create post_analytics table (for Meta CSV imports)
+    await sql`
+      CREATE TABLE IF NOT EXISTS post_analytics (
+        id                 BIGSERIAL PRIMARY KEY,
+        post_id            VARCHAR(100),
+        platform           VARCHAR(20),
+        post_type          VARCHAR(30),
+        account_name       VARCHAR(100),
+        description        TEXT,
+        publish_time       TIMESTAMP,
+        permalink          TEXT,
+        report_month       DATE,
+        views              INTEGER DEFAULT 0,
+        reach              INTEGER DEFAULT 0,
+        likes              INTEGER DEFAULT 0,
+        comments_count     INTEGER DEFAULT 0,
+        shares             INTEGER DEFAULT 0,
+        saves              INTEGER DEFAULT 0,
+        follows            INTEGER DEFAULT 0,
+        reactions          INTEGER DEFAULT 0,
+        total_clicks       INTEGER DEFAULT 0,
+        duration_sec       INTEGER DEFAULT 0,
+        seconds_viewed     DECIMAL(12,2) DEFAULT 0,
+        avg_seconds_viewed DECIMAL(10,2) DEFAULT 0,
+        imported_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(post_id, platform)
+      )
+    `;
+
     // Create indexes for better performance
     await sql`CREATE INDEX IF NOT EXISTS idx_social_content_post_date ON social_content(post_date)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_social_content_week_of ON social_content(week_of)`;
@@ -168,6 +210,10 @@ export async function GET(request: NextRequest) {
     await sql`CREATE INDEX IF NOT EXISTS idx_content_comments_content_id ON content_comments(content_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_blog_posts_publish_date ON blog_posts(publish_date)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_campaigns_send_date ON campaigns(send_date)`;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_post_analytics_report_month ON post_analytics(report_month)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_post_analytics_platform ON post_analytics(platform)`;
 
     return NextResponse.json({
       message: 'Marketing Dashboard database tables created successfully',
@@ -177,7 +223,9 @@ export async function GET(request: NextRequest) {
         'blog_posts',
         'content_tracker',
         'campaigns',
-        'caption_bank'
+        'caption_bank',
+        'notifications',
+        'post_analytics'
       ]
     });
 

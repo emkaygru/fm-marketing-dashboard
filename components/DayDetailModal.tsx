@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from './StatusBadge';
@@ -79,6 +80,19 @@ export default function DayDetailModal({
   onStatusChange,
   onAddContent,
 }: DayDetailModalProps) {
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
+
+  const handleDeleteClick = (id: number, isLastItem: boolean) => {
+    if (confirmingDeleteId === id) {
+      setConfirmingDeleteId(null);
+      onDelete(id);
+      if (isLastItem) onClose();
+    } else {
+      setConfirmingDeleteId(id);
+      setTimeout(() => setConfirmingDeleteId((prev) => (prev === id ? null : prev)), 3000);
+    }
+  };
+
   if (!isOpen || !date) return null;
 
   return (
@@ -245,16 +259,15 @@ export default function DayDetailModal({
                         Duplicate
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this content?')) {
-                            onDelete(item.id);
-                            if (content.length === 1) onClose();
-                          }
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-white border border-red-300 rounded-md hover:bg-red-50 transition-colors ml-auto"
+                        onClick={() => handleDeleteClick(item.id, content.length === 1)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ml-auto ${
+                          confirmingDeleteId === item.id
+                            ? 'bg-red-600 text-white border border-red-600 hover:bg-red-700'
+                            : 'text-red-600 bg-white border border-red-300 hover:bg-red-50'
+                        }`}
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        {confirmingDeleteId === item.id ? 'Confirm delete?' : 'Delete'}
                       </button>
                     </div>
                   </div>

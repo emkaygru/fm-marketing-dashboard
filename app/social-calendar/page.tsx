@@ -25,6 +25,9 @@ function SocialCalendarContent() {
   const [selectedDayContent, setSelectedDayContent] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [fieldContext, setFieldContext] = useState<string | undefined>(undefined);
+  const [bulkApprovePrompt, setBulkApprovePrompt] = useState<{
+    count: number; date: string; platform: string; ids: number[];
+  } | null>(null);
 
   // Load view preference from localStorage
   useEffect(() => {
@@ -206,6 +209,38 @@ function SocialCalendarContent() {
         fieldContext={fieldContext}
       />
 
+      {/* Bulk approve toast */}
+      {bulkApprovePrompt && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-white border border-green-300 rounded-xl shadow-lg text-sm max-w-sm w-full mx-4">
+          <span className="text-green-600 text-base">✅</span>
+          <span className="flex-1 text-gray-700">
+            Approve {bulkApprovePrompt.count} other post{bulkApprovePrompt.count > 1 ? 's' : ''} on {bulkApprovePrompt.date} for {bulkApprovePrompt.platform}?
+          </span>
+          <button
+            onClick={async () => {
+              for (const sid of bulkApprovePrompt.ids) {
+                await fetch('/api/social-content', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: sid, status: 'approved' }),
+                });
+              }
+              setRefreshTrigger((p) => p + 1);
+              setBulkApprovePrompt(null);
+            }}
+            className="px-3 py-1 text-xs font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 whitespace-nowrap"
+          >
+            Yes, all
+          </button>
+          <button
+            onClick={() => setBulkApprovePrompt(null)}
+            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+          >
+            No
+          </button>
+        </div>
+      )}
+
       <DayDetailModal
         isOpen={isDayDetailOpen}
         onClose={() => setIsDayDetailOpen(false)}
@@ -228,9 +263,30 @@ function SocialCalendarContent() {
             });
             if (response.ok) {
               setRefreshTrigger((prev) => prev + 1);
-              setSelectedDayContent(
-                selectedDayContent.map((c) => (c.id === id ? { ...c, status } : c))
-              );
+              const updatedDay = selectedDayContent.map((c) => (c.id === id ? { ...c, status } : c));
+              setSelectedDayContent(updatedDay);
+
+              // Bulk approve prompt: if just approved, check for same-date same-platform siblings
+              if (status === 'approved') {
+                const justApproved = selectedDayContent.find((c) => c.id === id);
+                if (justApproved) {
+                  const siblings = updatedDay.filter(
+                    (c) => c.id !== id &&
+                      c.post_date === justApproved.post_date &&
+                      c.platform === justApproved.platform &&
+                      c.status !== 'approved' && c.status !== 'posted'
+                  );
+                  if (siblings.length > 0) {
+                    setBulkApprovePrompt({
+                      count: siblings.length,
+                      date: format(selectedDate!, 'MMM d'),
+                      platform: justApproved.platform,
+                      ids: siblings.map((c) => c.id),
+                    });
+                    setTimeout(() => setBulkApprovePrompt(null), 8000);
+                  }
+                }
+              }
             }
           } catch (error) {
             console.error('Error updating status:', error);

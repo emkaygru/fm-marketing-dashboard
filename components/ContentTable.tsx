@@ -62,6 +62,9 @@ export default function ContentTable({
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [confirmingBulkDelete, setConfirmingBulkDelete] = useState(false);
 
   // Calculate initial weekOffset from initialWeekOf prop if provided
   const getInitialOffset = () => {
@@ -82,24 +85,24 @@ export default function ContentTable({
     setLoading(true);
     try {
       // Fetch ALL content — grouping by week_of (client-side) determines display.
-      // Previously filtered by post_date range, which caused posts visible on the
-      // dashboard (queried by week_of) to silently disappear in the table view.
       const response = await fetch('/api/social-content');
       const data = await response.json();
-      setContent(data.content || []);
+      const items: ContentItem[] = data.content || [];
+      setContent(items);
 
-      // Fetch comment counts for all content
-      const counts: Record<number, number> = {};
-      for (const item of data.content || []) {
+      // Batch fetch comment counts in a SINGLE request (fixes N+1 slow load)
+      if (items.length > 0) {
+        const ids = items.map((i) => i.id).join(',');
         try {
-          const commentsResponse = await fetch(`/api/social-content/comments?content_id=${item.id}`);
-          const commentsData = await commentsResponse.json();
-          counts[item.id] = commentsData.count || 0;
-        } catch (error) {
-          counts[item.id] = 0;
+          const countsRes = await fetch(`/api/social-content/comments?counts_for=${ids}`);
+          const countsMap: Record<string, number> = await countsRes.json();
+          const typedCounts: Record<number, number> = {};
+          Object.entries(countsMap).forEach(([k, v]) => { typedCounts[parseInt(k)] = v; });
+          setCommentCounts(typedCounts);
+        } catch {
+          // Non-fatal: counts just won't show badges
         }
       }
-      setCommentCounts(counts);
     } catch (error) {
       console.error('Error fetching content:', error);
     } finally {
@@ -123,10 +126,47 @@ export default function ContentTable({
     }
   };
 
-  const handleDeleteClick = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this content?')) {
+  // Two-step delete: first click arms, second click fires
+  const handleDeleteClick = (id: number) => {
+    if (confirmingDeleteId === id) {
+      setConfirmingDeleteId(null);
       onDelete(id);
+    } else {
+      setConfirmingDeleteId(id);
+      // Auto-reset after 3 seconds if user doesn't confirm
+      setTimeout(() => setConfirmingDeleteId((prev) => (prev === id ? null : prev)), 3000);
     }
+  };
+
+  // Bulk selection helpers
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleWeekSelect = (weekItems: ContentItem[]) => {
+    const weekIds = weekItems.map((i) => i.id);
+    const allSelected = weekIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      weekIds.forEach((id) => allSelected ? next.delete(id) : next.add(id));
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirmingBulkDelete) {
+      setConfirmingBulkDelete(true);
+      setTimeout(() => setConfirmingBulkDelete(false), 3000);
+      return;
+    }
+    setConfirmingBulkDelete(false);
+    const ids = Array.from(selectedIds);
+    setSelectedIds(new Set());
+    for (const id of ids) { onDelete(id); }
   };
 
   // Group content by week - normalize week_of to date string format
@@ -218,6 +258,31 @@ export default function ContentTable({
         ))}
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-fm-blue/10 border border-fm-blue/30 rounded-lg">
+          <span className="text-sm font-medium text-fm-navy">{selectedIds.size} post{selectedIds.size > 1 ? 's' : ''} selected</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-xs text-gray-600 hover:text-gray-800 px-2 py-1"
+            >
+              Clear
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className={`text-xs font-medium px-3 py-1.5 rounded transition-colors ${
+                confirmingBulkDelete
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-white text-red-600 border border-red-300 hover:bg-red-50'
+              }`}
+            >
+              {confirmingBulkDelete ? '⚠ Click again to confirm delete' : `Delete ${selectedIds.size} selected`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Mobile card list (< md) ────────────────────────────────────── */}
       <div className="md:hidden space-y-6">
         {weeks.map((weekStart) => {
@@ -225,7 +290,15 @@ export default function ContentTable({
           const weekContent = contentByWeek[weekKey] || [];
           return (
             <div key={weekKey}>
-              <div className="px-3 py-1.5 bg-gray-100 rounded-t-md text-sm font-semibold text-gray-700 border border-gray-200">
+              <div className="px-3 py-1.5 bg-gray-100 rounded-t-md text-sm font-semibold text-gray-700 border border-gray-200 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={weekContent.length > 0 && weekContent.every((i) => selectedIds.has(i.id))}
+                  onChange={() => toggleWeekSelect(weekContent)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded border-gray-400 text-fm-blue focus:ring-fm-blue"
+                  title="Select all this week"
+                />
                 Week of {format(weekStart, 'MMMM d, yyyy')}
               </div>
               {weekContent.length === 0 ? (
@@ -238,11 +311,18 @@ export default function ContentTable({
                     <div
                       key={item.id}
                       onClick={() => onRowClick?.(item)}
-                      className={`bg-white rounded-lg border border-gray-200 p-3 shadow-sm ${onRowClick ? 'cursor-pointer active:bg-blue-50' : ''}`}
+                      className={`bg-white rounded-lg border border-gray-200 p-3 shadow-sm ${selectedIds.has(item.id) ? 'ring-2 ring-fm-blue/50' : ''} ${onRowClick ? 'cursor-pointer active:bg-blue-50' : ''}`}
                     >
-                      {/* Row 1: date + type + platform + status */}
+                      {/* Row 1: checkbox + date + type + platform + status */}
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(item.id)}
+                            onChange={() => toggleSelect(item.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded border-gray-300 text-fm-blue focus:ring-fm-blue"
+                          />
                           <span className="text-sm font-medium text-gray-900">
                             {format(localDate(item.post_date), 'MMM d')}
                           </span>
@@ -294,10 +374,15 @@ export default function ContentTable({
                         </button>
                         <button
                           onClick={() => handleDeleteClick(item.id)}
-                          className="text-gray-400 hover:text-red-600 p-1 ml-auto"
+                          className={`p-1 ml-auto text-xs flex items-center gap-1 rounded transition-colors ${
+                            confirmingDeleteId === item.id
+                              ? 'text-white bg-red-600 px-2'
+                              : 'text-gray-400 hover:text-red-600'
+                          }`}
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
+                          {confirmingDeleteId === item.id && <span>Confirm?</span>}
                         </button>
                       </div>
                     </div>
@@ -315,6 +400,9 @@ export default function ContentTable({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-4 py-3 w-8">
+                  {/* no select-all in header; use week-level checkboxes */}
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
@@ -349,13 +437,22 @@ export default function ContentTable({
                 return (
                   <React.Fragment key={weekKey}>
                     <tr className="bg-gray-100">
+                      <td className="px-4 py-2">
+                        <input
+                          type="checkbox"
+                          checked={weekContent.length > 0 && weekContent.every((i) => selectedIds.has(i.id))}
+                          onChange={() => toggleWeekSelect(weekContent)}
+                          className="rounded border-gray-400 text-fm-blue focus:ring-fm-blue"
+                          title="Select all this week"
+                        />
+                      </td>
                       <td colSpan={8} className="px-6 py-2 text-sm font-semibold text-gray-700">
                         Week of {format(weekStart, 'MMMM d, yyyy')}
                       </td>
                     </tr>
                     {weekContent.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-6 py-4 text-sm text-gray-500 text-center">
+                        <td colSpan={9} className="px-6 py-4 text-sm text-gray-500 text-center">
                           No content scheduled for this week
                         </td>
                       </tr>
@@ -364,8 +461,16 @@ export default function ContentTable({
                         <tr
                           key={item.id}
                           onClick={() => onRowClick?.(item)}
-                          className={`hover:bg-blue-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                          className={`hover:bg-blue-50 transition-colors ${selectedIds.has(item.id) ? 'bg-blue-50' : ''} ${onRowClick ? 'cursor-pointer' : ''}`}
                         >
+                          <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(item.id)}
+                              onChange={() => toggleSelect(item.id)}
+                              className="rounded border-gray-300 text-fm-blue focus:ring-fm-blue"
+                            />
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {format(localDate(item.post_date), 'MMM d')}
                           </td>
@@ -436,10 +541,15 @@ export default function ContentTable({
                               </button>
                               <button
                                 onClick={() => handleDeleteClick(item.id)}
-                                className="text-gray-400 hover:text-red-600"
+                                className={`flex items-center gap-1 text-xs rounded transition-colors px-1 ${
+                                  confirmingDeleteId === item.id
+                                    ? 'text-white bg-red-600 px-2 py-0.5'
+                                    : 'text-gray-400 hover:text-red-600'
+                                }`}
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
+                                {confirmingDeleteId === item.id && <span>Confirm?</span>}
                               </button>
                             </div>
                           </td>

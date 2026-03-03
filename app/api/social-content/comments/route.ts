@@ -1,14 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-// GET comments for a specific content item
+export const dynamic = 'force-dynamic';
+
+// GET comments for a specific content item, OR batch comment counts
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const content_id = searchParams.get('content_id');
+  const counts_for = searchParams.get('counts_for'); // e.g. "1,2,3,4"
 
+  // ── Batch counts mode: returns { "1": 3, "4": 1, … } ─────────────────
+  if (counts_for) {
+    try {
+      const ids = counts_for.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
+      if (ids.length === 0) return NextResponse.json({});
+
+      const result = await sql.query(
+        `SELECT content_id, COUNT(*) AS cnt
+         FROM content_comments
+         WHERE content_id = ANY($1::bigint[])
+         GROUP BY content_id`,
+        [ids]
+      );
+
+      const map: Record<string, number> = {};
+      result.rows.forEach((row: any) => {
+        map[String(row.content_id)] = parseInt(row.cnt, 10);
+      });
+      return NextResponse.json(map);
+    } catch (error) {
+      console.error('Error fetching comment counts:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch counts', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
+  }
+
+  // ── Single-item threaded comments mode ───────────────────────────────
   if (!content_id) {
     return NextResponse.json(
-      { error: 'content_id is required' },
+      { error: 'content_id or counts_for is required' },
       { status: 400 }
     );
   }
@@ -20,17 +52,14 @@ export async function GET(request: NextRequest) {
       ORDER BY created_at ASC
     `;
 
-    // Organize comments into threaded structure
     const comments = result.rows;
     const commentMap = new Map();
     const threadedComments: any[] = [];
 
-    // First pass: create map of all comments
     comments.forEach((comment: any) => {
       commentMap.set(comment.id, { ...comment, replies: [] });
     });
 
-    // Second pass: build threaded structure
     comments.forEach((comment: any) => {
       const commentWithReplies = commentMap.get(comment.id);
       if (comment.parent_comment_id) {
@@ -84,15 +113,38 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `;
 
-    // TODO: Send email notification here
-    // When implementing email notifications, add logic to send email to:
-    // - Emily (all comments)
-    // - Ali (comments on her content)
-    // - Victoria (when status is ready_for_approval)
+    const newComment = result.rows[0];
+
+    // ── Notification trigger: Victoria's comments notify Emily ────────────
+    if (author_name === 'Victoria') {
+      try {
+        // Get the content title for a useful notification message
+        const contentRes = await sql`
+          SELECT content_needs FROM social_content WHERE id = ${content_id} LIMIT 1
+        `;
+        const title = contentRes.rows[0]?.content_needs
+          ? contentRes.rows[0].content_needs.substring(0, 60) + (contentRes.rows[0].content_needs.length > 60 ? '…' : '')
+          : `Post #${content_id}`;
+
+        await sql`
+          INSERT INTO notifications (type, message, content_id, comment_id, author_name)
+          VALUES (
+            'comment',
+            ${`Victoria commented on "${title}"`},
+            ${content_id},
+            ${newComment.id},
+            'Victoria'
+          )
+        `;
+      } catch (notifError) {
+        // Non-fatal — log but don't fail the comment creation
+        console.warn('Could not create notification:', notifError);
+      }
+    }
 
     return NextResponse.json({
       message: 'Comment created successfully',
-      comment: result.rows[0]
+      comment: newComment
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating comment:', error);

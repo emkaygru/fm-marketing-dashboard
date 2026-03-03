@@ -56,7 +56,7 @@ export default function CommentThread({
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
-  const [authorName, setAuthorName] = useState('Emily');
+  const [authorName, setAuthorName] = useState('Victoria');
   const [loading, setLoading] = useState(false);
 
   // Fetch comments when opened
@@ -151,6 +151,14 @@ export default function CommentThread({
     }
   };
 
+  // Determine bubble bg based on field prefix (overridden to gray if resolved)
+  const getBubbleClass = (text: string, resolved: boolean): string => {
+    if (resolved) return 'bg-gray-50 border-gray-200';
+    if (text.startsWith('[Caption]:')) return 'bg-violet-50 border-violet-200';
+    if (text.startsWith('[Asset]:')) return 'bg-amber-50 border-amber-200';
+    return 'bg-orange-50 border-orange-200';
+  };
+
   const renderComment = (comment: Comment, isReply = false) => {
     const pill = getFieldPill(comment.comment_text);
     const displayText = stripFieldPrefix(comment.comment_text);
@@ -158,9 +166,7 @@ export default function CommentThread({
     return (
       <div key={comment.id} className={isReply ? 'ml-8 mt-2' : 'mt-4'}>
         <div
-          className={`p-3 rounded-lg border ${
-            comment.resolved ? 'bg-gray-50 border-gray-200' : 'bg-orange-50 border-orange-200'
-          }`}
+          className={`p-3 rounded-lg border ${getBubbleClass(comment.comment_text, comment.resolved)}`}
         >
           <div className="flex items-start justify-between mb-2 gap-2">
             <div className="min-w-0">
@@ -249,13 +255,6 @@ export default function CommentThread({
           <MessageCircle className="w-5 h-5 text-fm-blue" />
           <h2 className="text-lg font-semibold text-gray-900">Comments</h2>
           <span className="text-sm text-gray-500">({comments.length})</span>
-          {fieldContext && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-              fieldContext === 'Caption' ? 'bg-violet-100 text-violet-800' : 'bg-amber-100 text-amber-800'
-            }`}>
-              {fieldContext}
-            </span>
-          )}
         </div>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
