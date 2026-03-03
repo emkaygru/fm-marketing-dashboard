@@ -141,7 +141,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Post Date *
@@ -171,7 +171,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Platform — checkboxes for create/duplicate, single select for edit */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

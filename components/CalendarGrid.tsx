@@ -175,7 +175,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
             <div
               key={day.toISOString()}
               onClick={() => onDayClick(day, dayContent)}
-              className={`min-h-24 p-2 border-r border-b border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors ${
+              className={`min-h-20 md:min-h-24 p-1.5 md:p-2 border-r border-b border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors ${
                 !isCurrentMonth ? 'bg-gray-50' : ''
               } ${isToday ? 'bg-blue-50' : ''}`}
             >

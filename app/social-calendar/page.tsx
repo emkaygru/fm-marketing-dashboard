@@ -24,6 +24,7 @@ function SocialCalendarContent() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDayContent, setSelectedDayContent] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [fieldContext, setFieldContext] = useState<string | undefined>(undefined);
 
   // Load view preference from localStorage
   useEffect(() => {
@@ -59,6 +60,13 @@ function SocialCalendarContent() {
 
   const handleCommentContent = (content: any) => {
     setSelectedContent(content);
+    setFieldContext(undefined);
+    setIsCommentThreadOpen(true);
+  };
+
+  const handleCommentWithContext = (content: any, context: string) => {
+    setSelectedContent(content);
+    setFieldContext(context);
     setIsCommentThreadOpen(true);
   };
 
@@ -192,9 +200,10 @@ function SocialCalendarContent() {
 
       <CommentThread
         isOpen={isCommentThreadOpen}
-        onClose={() => setIsCommentThreadOpen(false)}
+        onClose={() => { setIsCommentThreadOpen(false); setFieldContext(undefined); }}
         contentId={selectedContent?.id}
         contentTitle={selectedContent?.content_needs}
+        fieldContext={fieldContext}
       />
 
       <DayDetailModal
@@ -205,6 +214,7 @@ function SocialCalendarContent() {
         onEdit={handleEditContent}
         onDuplicate={handleDuplicateContent}
         onComment={handleCommentContent}
+        onCommentWithContext={handleCommentWithContext}
         onDelete={async (id) => {
           await handleDeleteContent(id);
           setSelectedDayContent(selectedDayContent.filter((c) => c.id !== id));

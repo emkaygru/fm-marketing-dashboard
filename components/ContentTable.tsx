@@ -155,20 +155,33 @@ export default function ContentTable({
     );
   }
 
+  const statusLabel = (status: string) =>
+    status.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  const statusClass = (status: string) =>
+    status === 'draft' ? 'bg-gray-200 text-gray-800' :
+    status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
+    status === 'ready_for_approval' ? 'bg-blue-200 text-blue-800' :
+    status === 'needs_edits' ? 'bg-orange-200 text-orange-800' :
+    status === 'approved' ? 'bg-green-200 text-green-800' :
+    status === 'scheduled' ? 'bg-purple-200 text-purple-800' :
+    status === 'posted' ? 'bg-emerald-200 text-emerald-800' :
+    'bg-gray-200 text-gray-800';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:justify-between">
         <button
           onClick={() => setWeekOffset(weekOffset - 8)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           Previous 8 Weeks
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-medium text-gray-700">
+        <div className="flex items-center justify-center gap-3">
+          <div className="text-sm font-medium text-gray-700 text-center">
             {format(weeks[0], 'MMM d')} – {format(endOfWeek(weeks[7], { weekStartsOn: 1 }), 'MMM d, yyyy')}
           </div>
           {weekOffset !== 0 && (
@@ -183,7 +196,7 @@ export default function ContentTable({
 
         <button
           onClick={() => setWeekOffset(weekOffset + 8)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           Next 8 Weeks
           <ChevronRight className="w-4 h-4" />
@@ -205,8 +218,99 @@ export default function ContentTable({
         ))}
       </div>
 
-      {/* Content Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* ── Mobile card list (< md) ────────────────────────────────────── */}
+      <div className="md:hidden space-y-6">
+        {weeks.map((weekStart) => {
+          const weekKey = format(weekStart, 'yyyy-MM-dd');
+          const weekContent = contentByWeek[weekKey] || [];
+          return (
+            <div key={weekKey}>
+              <div className="px-3 py-1.5 bg-gray-100 rounded-t-md text-sm font-semibold text-gray-700 border border-gray-200">
+                Week of {format(weekStart, 'MMMM d, yyyy')}
+              </div>
+              {weekContent.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-gray-500 text-center bg-white border border-t-0 border-gray-200 rounded-b-md">
+                  No content scheduled
+                </div>
+              ) : (
+                <div className="space-y-2 mt-1">
+                  {weekContent.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => onRowClick?.(item)}
+                      className={`bg-white rounded-lg border border-gray-200 p-3 shadow-sm ${onRowClick ? 'cursor-pointer active:bg-blue-50' : ''}`}
+                    >
+                      {/* Row 1: date + type + platform + status */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {format(localDate(item.post_date), 'MMM d')}
+                          </span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeColor(item.content_type)}`}>
+                            {item.content_type || '—'}
+                          </span>
+                          <span className="text-xs text-gray-600">{item.platform}</span>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${statusClass(item.status)}`}>
+                          {statusLabel(item.status)}
+                        </span>
+                      </div>
+
+                      {/* Row 2: topic */}
+                      {item.content_needs && (
+                        <p className="text-sm text-gray-700 line-clamp-2 mb-2">{item.content_needs}</p>
+                      )}
+
+                      {/* Row 3: actions */}
+                      <div
+                        className="flex items-center gap-3 pt-2 border-t border-gray-100"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => onComment(item)}
+                          className="text-gray-400 hover:text-fm-blue relative p-1"
+                          title="Comments"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          {commentCounts[item.id] > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-fm-orange text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                              {commentCounts[item.id]}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => onEdit(item)}
+                          className="text-gray-400 hover:text-fm-blue p-1"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onDuplicate(item)}
+                          className="text-gray-400 hover:text-green-600 p-1"
+                          title="Duplicate"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(item.id)}
+                          className="text-gray-400 hover:text-red-600 p-1 ml-auto"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Desktop table (md+) ────────────────────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -292,17 +396,8 @@ export default function ContentTable({
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                              item.status === 'draft' ? 'bg-gray-200 text-gray-800' :
-                              item.status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
-                              item.status === 'ready_for_approval' ? 'bg-blue-200 text-blue-800' :
-                              item.status === 'needs_edits' ? 'bg-orange-200 text-orange-800' :
-                              item.status === 'approved' ? 'bg-green-200 text-green-800' :
-                              item.status === 'scheduled' ? 'bg-purple-200 text-purple-800' :
-                              item.status === 'posted' ? 'bg-emerald-200 text-emerald-800' :
-                              'bg-gray-200 text-gray-800'
-                            }`}>
-                              {item.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusClass(item.status)}`}>
+                              {statusLabel(item.status)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
