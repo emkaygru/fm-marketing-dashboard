@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   const captions: any[] = [];
+  const apiErrors: string[] = [];
 
   // ── Facebook posts ────────────────────────────────────────────────────────
   try {
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
 
       if (data.error) {
         console.error('Facebook caption-bank error:', data.error);
+        apiErrors.push(`Facebook: ${data.error.message || JSON.stringify(data.error)}`);
         break;
       }
 
@@ -44,11 +46,11 @@ export async function GET(request: NextRequest) {
     }
   } catch (err) {
     console.error('Failed to fetch Facebook captions:', err);
+    apiErrors.push(`Facebook: ${err instanceof Error ? err.message : 'Network error'}`);
   }
 
   // ── Instagram posts ───────────────────────────────────────────────────────
   try {
-    // Use INSTAGRAM_BUSINESS_ACCOUNT_ID directly if set, otherwise look it up from the FB Page
     let igAccountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || null;
 
     if (!igAccountId) {
@@ -56,7 +58,11 @@ export async function GET(request: NextRequest) {
         `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${accessToken}`
       );
       const pageData = await pageRes.json();
-      igAccountId = pageData.instagram_business_account?.id || null;
+      if (pageData.error) {
+        apiErrors.push(`Instagram (page lookup): ${pageData.error.message || JSON.stringify(pageData.error)}`);
+      } else {
+        igAccountId = pageData.instagram_business_account?.id || null;
+      }
     }
 
     if (igAccountId) {
@@ -69,6 +75,7 @@ export async function GET(request: NextRequest) {
 
         if (data.error) {
           console.error('Instagram caption-bank error:', data.error);
+          apiErrors.push(`Instagram: ${data.error.message || JSON.stringify(data.error)}`);
           break;
         }
 
@@ -91,10 +98,11 @@ export async function GET(request: NextRequest) {
     }
   } catch (err) {
     console.error('Failed to fetch Instagram captions:', err);
+    apiErrors.push(`Instagram: ${err instanceof Error ? err.message : 'Network error'}`);
   }
 
   // Sort newest first
   captions.sort((a, b) => (b.date > a.date ? 1 : -1));
 
-  return NextResponse.json({ captions, count: captions.length });
+  return NextResponse.json({ captions, count: captions.length, errors: apiErrors });
 }

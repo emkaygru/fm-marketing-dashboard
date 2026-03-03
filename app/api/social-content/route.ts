@@ -93,18 +93,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { graphic_text, beth_schedule_approved } = body;
+
     // Compute week_of server-side using Postgres date_trunc so it's always the
     // correct ISO Monday regardless of the client's timezone.
     const result = await sql`
       INSERT INTO social_content (
         post_date, week_of, content_type, platform, content_needs,
-        asset_link, caption, status, assigned_to, created_by
+        asset_link, caption, status, assigned_to, created_by,
+        graphic_text, beth_schedule_approved
       )
       VALUES (
         ${post_date},
         date_trunc('week', ${post_date}::date)::date,
         ${content_type}, ${platform}, ${content_needs},
-        ${asset_link}, ${caption}, ${status}, ${assigned_to}, ${created_by}
+        ${asset_link}, ${caption}, ${status}, ${assigned_to}, ${created_by},
+        ${graphic_text ?? null}, ${beth_schedule_approved ?? false}
       )
       RETURNING *
     `;
@@ -168,9 +172,23 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const updated = result.rows[0];
+
+    // Notify Emily when Beth updates her own content (caption, graphic_text, or schedule approval)
+    const bethFields = ['caption', 'graphic_text', 'beth_schedule_approved'];
+    const updatedBethField = bethFields.some((f) => f in updates && updates[f] !== undefined);
+    if (updated.assigned_to === 'Beth' && updatedBethField) {
+      try {
+        await sql`
+          INSERT INTO notifications (type, message, content_id, author_name)
+          VALUES ('beth_update', 'Beth updated a LinkedIn post', ${id}, 'Beth')
+        `;
+      } catch { /* non-fatal */ }
+    }
+
     return NextResponse.json({
       message: 'Content updated successfully',
-      content: result.rows[0]
+      content: updated
     });
   } catch (error) {
     console.error('Error updating social content:', error);

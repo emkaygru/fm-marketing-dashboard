@@ -32,7 +32,8 @@ interface DayDetailModalProps {
 }
 
 // ── Type badge colors ─────────────────────────────────────────────────
-const getTypeColor = (type: string): string => {
+const getTypeColor = (type: string, assignedTo?: string): string => {
+  if (assignedTo === 'Beth') return 'bg-teal-100 text-teal-800';
   switch (type) {
     case 'Post':     return 'bg-violet-100 text-violet-800';
     case 'Reel':     return 'bg-rose-100 text-rose-800';
@@ -40,6 +41,11 @@ const getTypeColor = (type: string): string => {
     case 'Carousel': return 'bg-cyan-100 text-cyan-800';
     default:         return 'bg-slate-100 text-slate-700';
   }
+};
+
+const getTypeLabel = (type: string, assignedTo?: string): string => {
+  if (assignedTo === 'Beth') return `${(type || '?').charAt(0)} BETH`;
+  return type || '—';
 };
 
 // ── Asset preview detection ───────────────────────────────────────────
@@ -228,8 +234,8 @@ export default function DayDetailModal({
                     {/* Post header: type badge + platform + status */}
                     <div className="flex items-start justify-between mb-3 gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getTypeColor(item.content_type)}`}>
-                          {item.content_type || '—'}
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getTypeColor(item.content_type, item.assigned_to)}`}>
+                          {getTypeLabel(item.content_type, item.assigned_to)}
                         </span>
                         <span className="font-medium text-gray-900 text-sm">{item.platform}</span>
                         <span className="text-xs text-gray-500">· {item.assigned_to}</span>

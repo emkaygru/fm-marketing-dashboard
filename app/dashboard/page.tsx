@@ -8,8 +8,24 @@ const localDate = (dateStr: string): Date => {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
 };
-import { ExternalLink, Calendar, ArrowRight } from 'lucide-react';
+import { ExternalLink, Calendar, ArrowRight, Pencil, Check, X } from 'lucide-react';
 import Link from 'next/link';
+
+interface SocialFocus {
+  id: number;
+  sort_order: number;
+  title: string;
+  description: string | null;
+  target_value: string | null;
+}
+
+interface ReportSnapshot {
+  reportMonth: string | null;
+  totalReach: number;
+  totalViews: number;
+  totalLikes: number;
+  topPlatform: string | null;
+}
 
 interface TrackerWeek {
   week_of: string;
@@ -41,8 +57,19 @@ export default function DashboardPage() {
   const [tracker, setTracker] = useState<TrackerWeek[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Social Focuses
+  const [focuses, setFocuses] = useState<SocialFocus[]>([]);
+  const [editingFocus, setEditingFocus] = useState<number | null>(null);
+  const [focusForm, setFocusForm] = useState({ title: '', description: '', target_value: '' });
+  const [savingFocus, setSavingFocus] = useState(false);
+
+  // Report snapshot
+  const [reportSnapshot, setReportSnapshot] = useState<ReportSnapshot | null>(null);
+
   useEffect(() => {
     fetchTracker();
+    fetchFocuses();
+    fetchReportSnapshot();
   }, []);
 
   const fetchTracker = async () => {
@@ -55,6 +82,64 @@ export default function DashboardPage() {
       console.error('Error fetching content tracker:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFocuses = async () => {
+    try {
+      const res = await fetch('/api/social-focuses');
+      const data = await res.json();
+      setFocuses(data.focuses || []);
+    } catch (error) {
+      console.error('Error fetching focuses:', error);
+    }
+  };
+
+  const fetchReportSnapshot = async () => {
+    try {
+      const res = await fetch('/api/post-analytics?limit=200');
+      const data = await res.json();
+      const rows: any[] = data.analytics || [];
+      if (rows.length === 0) { setReportSnapshot({ reportMonth: null, totalReach: 0, totalViews: 0, totalLikes: 0, topPlatform: null }); return; }
+      // Find latest report_month
+      const latestMonth = rows.reduce((best: string, r: any) => r.report_month > best ? r.report_month : best, rows[0].report_month);
+      const monthRows = rows.filter((r: any) => r.report_month === latestMonth);
+      const totalReach = monthRows.reduce((s: number, r: any) => s + (Number(r.reach) || 0), 0);
+      const totalViews = monthRows.reduce((s: number, r: any) => s + (Number(r.views) || 0), 0);
+      const totalLikes = monthRows.reduce((s: number, r: any) => s + (Number(r.likes) || 0), 0);
+      // Top platform by reach
+      const byPlatform: Record<string, number> = {};
+      monthRows.forEach((r: any) => { byPlatform[r.platform] = (byPlatform[r.platform] || 0) + (Number(r.reach) || 0); });
+      const topPlatform = Object.entries(byPlatform).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+      setReportSnapshot({ reportMonth: latestMonth, totalReach, totalViews, totalLikes, topPlatform });
+    } catch (error) {
+      console.error('Error fetching report snapshot:', error);
+    }
+  };
+
+  const startEditFocus = (focus: SocialFocus) => {
+    setEditingFocus(focus.sort_order);
+    setFocusForm({ title: focus.title, description: focus.description || '', target_value: focus.target_value || '' });
+  };
+
+  const cancelEditFocus = () => { setEditingFocus(null); };
+
+  const saveFocus = async (sortOrder: number) => {
+    setSavingFocus(true);
+    try {
+      const res = await fetch('/api/social-focuses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort_order: sortOrder, title: focusForm.title, description: focusForm.description || null, target_value: focusForm.target_value || null }),
+      });
+      if (res.ok) {
+        setFocuses(prev => prev.map(f => f.sort_order === sortOrder ? { ...f, title: focusForm.title, description: focusForm.description || null, target_value: focusForm.target_value || null } : f));
+        setEditingFocus(null);
+      }
+    } catch (error) {
+      console.error('Error saving focus:', error);
+    } finally {
+      setSavingFocus(false);
     }
   };
 
@@ -280,6 +365,113 @@ export default function DashboardPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Top 3 Focuses */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Focuses</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {focuses.map((focus) => (
+              <div key={focus.sort_order} className="bg-white rounded-lg shadow border-l-4 border-teal-500 p-4">
+                {editingFocus === focus.sort_order ? (
+                  <div className="space-y-3">
+                    <input
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      placeholder="Title"
+                      value={focusForm.title}
+                      onChange={(e) => setFocusForm(f => ({ ...f, title: e.target.value }))}
+                    />
+                    <textarea
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-teal-500 resize-none"
+                      placeholder="Description (optional)"
+                      rows={2}
+                      value={focusForm.description}
+                      onChange={(e) => setFocusForm(f => ({ ...f, description: e.target.value }))}
+                    />
+                    <input
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      placeholder="Target (e.g. 10k reach/month)"
+                      value={focusForm.target_value}
+                      onChange={(e) => setFocusForm(f => ({ ...f, target_value: e.target.value }))}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveFocus(focus.sort_order)}
+                        disabled={savingFocus}
+                        className="flex items-center gap-1 px-3 py-1 bg-teal-600 text-white text-xs rounded hover:bg-teal-700 disabled:opacity-50"
+                      >
+                        <Check className="w-3 h-3" /> Save
+                      </button>
+                      <button
+                        onClick={cancelEditFocus}
+                        className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
+                      >
+                        <X className="w-3 h-3" /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-teal-500 font-bold text-sm">{focus.sort_order}.</span>
+                        <span className="font-semibold text-gray-900 text-sm">
+                          {focus.title || <span className="text-gray-400 italic">No title</span>}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => startEditFocus(focus)}
+                        className="text-gray-400 hover:text-teal-600 flex-shrink-0"
+                        title="Edit focus"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {focus.description && (
+                      <p className="text-xs text-gray-600 mt-1 ml-5">{focus.description}</p>
+                    )}
+                    {focus.target_value && (
+                      <p className="text-xs text-teal-700 font-medium mt-1 ml-5">🎯 {focus.target_value}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Report Snapshot */}
+          {reportSnapshot && (
+            <div className="mt-4 bg-white rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Latest Meta Report
+                  {reportSnapshot.reportMonth && (
+                    <span className="ml-2 font-normal text-gray-500">
+                      — {format(localDate(reportSnapshot.reportMonth), 'MMMM yyyy')}
+                    </span>
+                  )}
+                </h3>
+                <Link href="/reports" className="text-xs text-fm-blue hover:underline">View Reports</Link>
+              </div>
+              {reportSnapshot.reportMonth === null ? (
+                <p className="text-sm text-gray-500 italic">No report data yet — upload a CSV on the Reports page.</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Total Reach', value: reportSnapshot.totalReach.toLocaleString() },
+                    { label: 'Total Views', value: reportSnapshot.totalViews.toLocaleString() },
+                    { label: 'Total Likes', value: reportSnapshot.totalLikes.toLocaleString() },
+                    { label: 'Top Platform', value: reportSnapshot.topPlatform ?? '—' },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-gray-50 rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-gray-900">{value}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Legend */}

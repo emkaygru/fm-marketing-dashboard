@@ -73,6 +73,7 @@ export default function CaptionBankPage() {
   const [live, setLive] = useState<LiveCaption[]>([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
+  const [liveApiErrors, setLiveApiErrors] = useState<string[]>([]);
   const [liveFetched, setLiveFetched] = useState(false);
 
   // --- Shared UI state ---
@@ -101,11 +102,13 @@ export default function CaptionBankPage() {
   const fetchLive = async () => {
     setLiveLoading(true);
     setLiveError(null);
+    setLiveApiErrors([]);
     try {
       const res = await fetch('/api/caption-bank');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load captions from accounts');
       setLive(data.captions || []);
+      setLiveApiErrors(data.errors || []);
       setLiveFetched(true);
     } catch (err) {
       setLiveError(err instanceof Error ? err.message : 'Failed to load captions');
@@ -502,6 +505,15 @@ export default function CaptionBankPage() {
             {liveError && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4 text-sm text-red-700">
                 {liveError}
+              </div>
+            )}
+            {!liveLoading && !liveError && liveFetched && liveApiErrors.length > 0 && (
+              <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
+                <p className="font-medium mb-1">⚠️ Couldn't load some captions from Meta</p>
+                {liveApiErrors.map((e, i) => <p key={i} className="text-xs">{e}</p>)}
+                <p className="text-xs mt-2 text-yellow-700">
+                  Your access token may have expired. Update <code className="bg-yellow-100 px-1 rounded">META_ACCESS_TOKEN</code> in Vercel → Settings → Environment Variables.
+                </p>
               </div>
             )}
             {!liveLoading && !liveError && liveFetched && filteredLive.length === 0 && (

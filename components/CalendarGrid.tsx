@@ -28,6 +28,7 @@ interface ContentItem {
   platform: string;
   status: string;
   content_needs: string;
+  assigned_to?: string;
 }
 
 interface CalendarGridProps {
@@ -108,7 +109,8 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
   };
 
   // Left-border color on calendar blocks to indicate post type (distinct from status background)
-  const getTypeBorderColor = (type: string): string => {
+  const getTypeBorderColor = (type: string, assignedTo?: string): string => {
+    if (assignedTo === 'Beth') return 'border-l-teal-500';
     switch (type) {
       case 'Post':     return 'border-l-violet-500';
       case 'Reel':     return 'border-l-rose-500';
@@ -119,7 +121,8 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
   };
 
   // Short abbreviation for type (used in tight calendar blocks)
-  const getTypeAbbr = (type: string): string => {
+  const getTypeAbbr = (type: string, assignedTo?: string): string => {
+    if (assignedTo === 'Beth') return `${(type || '?').charAt(0)}B`;
     switch (type) {
       case 'Post':     return 'P';
       case 'Reel':     return 'R';
@@ -191,10 +194,10 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
                 {dayContent.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
-                    className={`text-xs px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${getTypeBorderColor(item.content_type)} truncate`}
+                    className={`text-xs px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${getTypeBorderColor(item.content_type, item.assigned_to)} truncate`}
                     title={`${item.content_type} · ${item.platform} — ${item.content_needs || 'No description'}`}
                   >
-                    <span className="font-bold mr-0.5 opacity-70">{getTypeAbbr(item.content_type)}</span>
+                    <span className="font-bold mr-0.5 opacity-70">{getTypeAbbr(item.content_type, item.assigned_to)}</span>
                     <span className="font-semibold">{getPlatformAcronym(item.platform)}</span>
                   </div>
                 ))}

@@ -40,7 +40,8 @@ interface ContentTableProps {
 }
 
 // Color-coded type badges — distinct from status colors (violet/rose/amber/cyan vs gray/blue/green/etc.)
-const getTypeColor = (type: string): string => {
+const getTypeColor = (type: string, assignedTo?: string): string => {
+  if (assignedTo === 'Beth') return 'bg-teal-100 text-teal-800';
   switch (type) {
     case 'Post':     return 'bg-violet-100 text-violet-800';
     case 'Reel':     return 'bg-rose-100 text-rose-800';
@@ -48,6 +49,10 @@ const getTypeColor = (type: string): string => {
     case 'Carousel': return 'bg-cyan-100 text-cyan-800';
     default:         return 'bg-slate-100 text-slate-700';
   }
+};
+const getTypeLabel = (type: string, assignedTo?: string): string => {
+  if (assignedTo === 'Beth') return `${(type || '?').charAt(0)} BETH`;
+  return type || '—';
 };
 
 export default function ContentTable({
@@ -335,8 +340,8 @@ export default function ContentTable({
                           <span className="text-sm font-medium text-gray-900">
                             {format(localDate(item.post_date), 'MMM d')}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeColor(item.content_type)}`}>
-                            {item.content_type || '—'}
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeColor(item.content_type, item.assigned_to)}`}>
+                            {getTypeLabel(item.content_type, item.assigned_to)}
                           </span>
                           <span className="text-xs text-gray-600">{item.platform}</span>
                         </div>
@@ -502,8 +507,8 @@ export default function ContentTable({
                             {format(localDate(item.post_date), 'MMM d')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeColor(item.content_type)}`}>
-                              {item.content_type || '—'}
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${getTypeColor(item.content_type, item.assigned_to)}`}>
+                              {getTypeLabel(item.content_type, item.assigned_to)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

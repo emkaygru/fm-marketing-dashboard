@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { title, topic, author, publish_date, link, status } = data;
+    const { title, topic, author, publish_date, link, status, doc_link } = data;
 
     const result = await sql`
-      INSERT INTO blog_posts (title, topic, author, publish_date, link, status)
-      VALUES (${title}, ${topic || null}, ${author}, ${publish_date}, ${link || null}, ${status || 'draft'})
+      INSERT INTO blog_posts (title, topic, author, publish_date, link, status, doc_link)
+      VALUES (${title}, ${topic || null}, ${author}, ${publish_date}, ${link || null}, ${status || 'draft'}, ${doc_link || null})
       RETURNING *
     `;
 
@@ -61,21 +61,34 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const data = await request.json();
-    const { id, title, topic, author, publish_date, link, status } = data;
+    const { id, title, topic, author, publish_date, link, status, doc_link, beth_complete } = data;
 
     const result = await sql`
       UPDATE blog_posts
       SET
-        title = COALESCE(${title}, title),
-        topic = COALESCE(${topic}, topic),
-        author = COALESCE(${author}, author),
-        publish_date = COALESCE(${publish_date}, publish_date),
-        link = COALESCE(${link}, link),
-        status = COALESCE(${status}, status),
+        title = COALESCE(${title ?? null}, title),
+        topic = COALESCE(${topic ?? null}, topic),
+        author = COALESCE(${author ?? null}, author),
+        publish_date = COALESCE(${publish_date ?? null}, publish_date),
+        link = COALESCE(${link ?? null}, link),
+        status = COALESCE(${status ?? null}, status),
+        doc_link = COALESCE(${doc_link ?? null}, doc_link),
+        beth_complete = COALESCE(${beth_complete ?? null}, beth_complete),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
     `;
+
+    // Notify Emily when Beth updates a blog post (doc_link or mark-complete)
+    const isBethUpdate = doc_link !== undefined || beth_complete !== undefined;
+    if (isBethUpdate) {
+      try {
+        await sql`
+          INSERT INTO notifications (type, message, author_name)
+          VALUES ('beth_blog', 'Beth updated a blog post', 'Beth')
+        `;
+      } catch { /* non-fatal */ }
+    }
 
     return NextResponse.json({
       success: true,

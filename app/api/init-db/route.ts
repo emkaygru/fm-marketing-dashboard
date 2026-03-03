@@ -203,6 +203,31 @@ export async function GET(request: NextRequest) {
       )
     `;
 
+    // ── Safe migrations: add new columns to existing tables ──────────────
+    await sql`ALTER TABLE social_content ADD COLUMN IF NOT EXISTS graphic_text TEXT`;
+    await sql`ALTER TABLE social_content ADD COLUMN IF NOT EXISTS beth_schedule_approved BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS doc_link TEXT`;
+    await sql`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS beth_complete BOOLEAN DEFAULT FALSE`;
+
+    // ── Social Focuses table (dashboard top 3 goals) ───────────────────────
+    await sql`
+      CREATE TABLE IF NOT EXISTS social_focuses (
+        id BIGSERIAL PRIMARY KEY,
+        sort_order INTEGER DEFAULT 0 UNIQUE,
+        title VARCHAR(100) NOT NULL DEFAULT '',
+        description TEXT,
+        target_value TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    // Seed 3 focus slots if not yet populated
+    await sql`
+      INSERT INTO social_focuses (sort_order, title)
+      VALUES (1, 'Focus 1'), (2, 'Focus 2'), (3, 'Focus 3')
+      ON CONFLICT (sort_order) DO NOTHING
+    `;
+
     // Create indexes for better performance
     await sql`CREATE INDEX IF NOT EXISTS idx_social_content_post_date ON social_content(post_date)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_social_content_week_of ON social_content(week_of)`;
@@ -225,7 +250,8 @@ export async function GET(request: NextRequest) {
         'campaigns',
         'caption_bank',
         'notifications',
-        'post_analytics'
+        'post_analytics',
+        'social_focuses'
       ]
     });
 
