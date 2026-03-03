@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink } from 'lucide-react';
+import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from './StatusBadge';
 
@@ -49,23 +49,86 @@ type AssetPreview =
   | { type: 'canva' }
   | null;
 
+/** Extract a Google Drive thumbnail URL from any Drive file link */
+const gdriveThumbnail = (url: string): string | null => {
+  const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : null;
+};
+
 const getAssetPreview = (url: string): AssetPreview => {
   if (!url) return null;
-  // Google Drive — extract file ID from /file/d/{id}/ or open?id={id} patterns
-  const gdriveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (gdriveMatch) {
-    return { type: 'gdrive', src: `https://drive.google.com/uc?export=view&id=${gdriveMatch[1]}` };
-  }
-  // Direct image URL
-  if (/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)) {
-    return { type: 'image', src: url };
-  }
-  // Canva
-  if (url.includes('canva.com')) {
-    return { type: 'canva' };
-  }
+  const thumb = gdriveThumbnail(url);
+  if (thumb) return { type: 'gdrive', src: thumb };
+  if (/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)) return { type: 'image', src: url };
+  if (url.includes('canva.com')) return { type: 'canva' };
   return null;
 };
+
+/** Parse a carousel asset_link (newline or comma-separated Drive URLs) into thumbnail URLs */
+const getCarouselImages = (assetLink: string): string[] => {
+  if (!assetLink) return [];
+  return assetLink
+    .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((url) => {
+      const thumb = gdriveThumbnail(url);
+      if (thumb) return thumb;
+      if (/\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)) return url;
+      return null;
+    })
+    .filter(Boolean) as string[];
+};
+
+// ── Carousel slide viewer ─────────────────────────────────────────────
+function CarouselPreview({ images, folderUrl }: { images: string[]; folderUrl: string }) {
+  const [idx, setIdx] = useState(0);
+  if (images.length === 0) return null;
+  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length);
+  const next = () => setIdx((i) => (i + 1) % images.length);
+  return (
+    <div className="relative mb-1.5">
+      <img
+        key={images[idx]}
+        src={images[idx]}
+        alt={`Slide ${idx + 1} of ${images.length}`}
+        className="w-full max-h-64 object-contain rounded-md border border-gray-200 bg-gray-100"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+            title="Previous"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+            title="Next"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <span className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
+            {idx + 1} / {images.length}
+          </span>
+          {/* Dot indicators */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIdx(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === idx ? 'bg-white' : 'bg-white/50'}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function DayDetailModal({
   isOpen,
@@ -191,8 +254,14 @@ export default function DayDetailModal({
                           )}
                         </div>
 
-                        {/* Image preview for Google Drive / direct image URLs */}
-                        {(assetPreview?.type === 'gdrive' || assetPreview?.type === 'image') && (
+                        {/* Carousel: multi-image slide viewer */}
+                        {item.content_type === 'Carousel' ? (
+                          <CarouselPreview
+                            images={getCarouselImages(item.asset_link)}
+                            folderUrl={item.asset_link}
+                          />
+                        ) : (assetPreview?.type === 'gdrive' || assetPreview?.type === 'image') ? (
+                          /* Single image preview for Google Drive / direct image URLs */
                           <div className="mb-1.5">
                             <img
                               src={assetPreview.src}
@@ -201,7 +270,7 @@ export default function DayDetailModal({
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                             />
                           </div>
-                        )}
+                        ) : null}
 
                         <a
                           href={item.asset_link}
@@ -209,7 +278,7 @@ export default function DayDetailModal({
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-sm text-fm-blue hover:text-fm-navy underline"
                         >
-                          {assetPreview?.type === 'canva' ? '🎨 View in Canva' : 'View Asset'}
+                          {assetPreview?.type === 'canva' ? '🎨 View in Canva' : item.content_type === 'Carousel' ? 'View Folder' : 'View Asset'}
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
