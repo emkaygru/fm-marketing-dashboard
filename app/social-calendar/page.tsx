@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { format } from 'date-fns';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Plus, Calendar as CalendarIcon, List } from 'lucide-react';
 import ContentTable from '@/components/ContentTable';
 import CalendarGrid from '@/components/CalendarGrid';
@@ -13,7 +13,11 @@ import DayDetailModal from '@/components/DayDetailModal';
 // Inner component — uses useSearchParams, must be inside <Suspense>
 function SocialCalendarContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const weekParam = searchParams.get('week') || undefined; // e.g. "2026-03-02" from dashboard "View" link
+  const dateParam = searchParams.get('date') || undefined; // e.g. "2026-03-05" from a shared day link
+  // Capture initial dateParam in a ref so our mount effect doesn't need it as a dep
+  const initialDateParam = useRef(dateParam);
 
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -72,6 +76,37 @@ function SocialCalendarContent() {
     setFieldContext(context);
     setIsCommentThreadOpen(true);
   };
+
+  // ── Shared day deep-link helpers ──────────────────────────────────────
+  const openDayModal = (date: Date, dayContent: any[]) => {
+    setSelectedDate(date);
+    setSelectedDayContent(dayContent);
+    setIsDayDetailOpen(true);
+    router.replace(`/social-calendar?date=${format(date, 'yyyy-MM-dd')}`, { scroll: false });
+  };
+
+  const closeDayModal = () => {
+    setIsDayDetailOpen(false);
+    router.replace('/social-calendar', { scroll: false });
+  };
+
+  // On mount: if a ?date= param is present (shared link), open the modal for that day
+  useEffect(() => {
+    const param = initialDateParam.current;
+    if (!param) return;
+    // Switch to calendar view for a nicer shared experience
+    setViewMode('calendar');
+    fetch('/api/social-content')
+      .then((r) => r.json())
+      .then((data) => {
+        const items = (data.content || []).filter((c: any) => c.post_date === param);
+        const [y, m, d] = param.split('-').map(Number);
+        setSelectedDate(new Date(y, m - 1, d));
+        setSelectedDayContent(items);
+        setIsDayDetailOpen(true);
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFormSubmit = async (data: any | any[]): Promise<void> => {
     // data is an array when creating/duplicating with multiple platforms selected
@@ -173,9 +208,7 @@ function SocialCalendarContent() {
             onComment={handleCommentContent}
             onRowClick={(item) => {
               const [y, m, d] = item.post_date.split('-').map(Number);
-              setSelectedDate(new Date(y, m - 1, d));
-              setSelectedDayContent([item]);
-              setIsDayDetailOpen(true);
+              openDayModal(new Date(y, m - 1, d), [item]);
             }}
             refreshTrigger={refreshTrigger}
             initialWeekOf={weekParam}
@@ -183,9 +216,7 @@ function SocialCalendarContent() {
         ) : (
           <CalendarGrid
             onDayClick={(date, dayContent) => {
-              setSelectedDate(date);
-              setSelectedDayContent(dayContent);
-              setIsDayDetailOpen(true);
+              openDayModal(date, dayContent);
             }}
             refreshTrigger={refreshTrigger}
           />
@@ -243,7 +274,7 @@ function SocialCalendarContent() {
 
       <DayDetailModal
         isOpen={isDayDetailOpen}
-        onClose={() => setIsDayDetailOpen(false)}
+        onClose={closeDayModal}
         date={selectedDate}
         content={selectedDayContent}
         onEdit={handleEditContent}

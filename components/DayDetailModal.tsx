@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink, ChevronLeft, ChevronRight, Link } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from './StatusBadge';
 
@@ -144,6 +144,17 @@ export default function DayDetailModal({
   onAddContent,
 }: DayDetailModalProps) {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    if (!date) return;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const url = `${window.location.origin}/social-calendar?date=${dateStr}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const handleDeleteClick = (id: number, isLastItem: boolean) => {
     if (confirmingDeleteId === id) {
@@ -172,9 +183,24 @@ export default function DayDetailModal({
               {content.length} {content.length === 1 ? 'post' : 'posts'} scheduled
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Copy shareable link */}
+            <button
+              onClick={handleCopyLink}
+              title="Copy link to this day"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                copied
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+              }`}
+            >
+              <Link className="w-3.5 h-3.5" />
+              {copied ? 'Copied!' : 'Share'}
+            </button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1 ml-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content */}
