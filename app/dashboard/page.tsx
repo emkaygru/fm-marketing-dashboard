@@ -447,7 +447,7 @@ export default function DashboardPage() {
                   Latest Meta Report
                   {reportSnapshot.reportMonth && (
                     <span className="ml-2 font-normal text-gray-500">
-                      — {format(localDate(reportSnapshot.reportMonth), 'MMMM yyyy')}
+                      — {format(localDate(reportSnapshot.reportMonth.slice(0, 7) + '-01'), 'MMMM yyyy')}
                     </span>
                   )}
                 </h3>
