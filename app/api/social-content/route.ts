@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { graphic_text, beth_schedule_approved } = body;
+    const { graphic_text, beth_schedule_approved, thread_id } = body;
 
     // Compute week_of server-side using Postgres date_trunc so it's always the
     // correct ISO Monday regardless of the client's timezone.
@@ -101,21 +101,30 @@ export async function POST(request: NextRequest) {
       INSERT INTO social_content (
         post_date, week_of, content_type, platform, content_needs,
         asset_link, caption, status, assigned_to, created_by,
-        graphic_text, beth_schedule_approved
+        graphic_text, beth_schedule_approved, thread_id
       )
       VALUES (
         ${post_date},
         date_trunc('week', ${post_date}::date)::date,
         ${content_type}, ${platform}, ${content_needs},
         ${asset_link}, ${caption}, ${status}, ${assigned_to}, ${created_by},
-        ${graphic_text ?? null}, ${beth_schedule_approved ?? false}
+        ${graphic_text ?? null}, ${beth_schedule_approved ?? false},
+        ${thread_id ?? null}
       )
       RETURNING *
     `;
 
+    const newPost = result.rows[0];
+
+    // If no thread_id was provided, self-assign so this post is its own thread leader
+    if (!thread_id && newPost) {
+      await sql`UPDATE social_content SET thread_id = ${newPost.id} WHERE id = ${newPost.id}`;
+      newPost.thread_id = newPost.id;
+    }
+
     return NextResponse.json({
       message: 'Content created successfully',
-      content: result.rows[0]
+      content: newPost
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating social content:', error);
@@ -186,9 +195,36 @@ export async function PUT(request: NextRequest) {
       } catch { /* non-fatal */ }
     }
 
+    // Auto-approve all sibling posts in the same thread when one is approved
+    if (updates.status === 'approved' && updated.thread_id) {
+      try {
+        await sql`
+          UPDATE social_content
+          SET status = 'approved', updated_at = CURRENT_TIMESTAMP
+          WHERE thread_id = ${updated.thread_id}
+            AND id != ${id}
+            AND status NOT IN ('approved', 'posted')
+        `;
+      } catch { /* non-fatal */ }
+    }
+
+    // Detect caption/asset_link changes on threaded posts so the UI can offer a sync prompt
+    let threadSiblings: { id: number; platform: string }[] = [];
+    const contentChanged = updates.caption !== undefined || updates.asset_link !== undefined;
+    if (contentChanged && updated.thread_id) {
+      try {
+        const siblingsResult = await sql`
+          SELECT id, platform FROM social_content
+          WHERE thread_id = ${updated.thread_id} AND id != ${id}
+        `;
+        threadSiblings = siblingsResult.rows as { id: number; platform: string }[];
+      } catch { /* non-fatal */ }
+    }
+
     return NextResponse.json({
       message: 'Content updated successfully',
-      content: updated
+      content: updated,
+      ...(threadSiblings.length > 0 && { thread_siblings: threadSiblings }),
     });
   } catch (error) {
     console.error('Error updating social content:', error);

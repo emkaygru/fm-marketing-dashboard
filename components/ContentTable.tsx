@@ -27,6 +27,7 @@ interface ContentItem {
   created_by: string;
   created_at: string;
   updated_at: string;
+  thread_id?: number;
 }
 
 interface ContentTableProps {

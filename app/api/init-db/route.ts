@@ -206,8 +206,12 @@ export async function GET(request: NextRequest) {
     // ── Safe migrations: add new columns to existing tables ──────────────
     await sql`ALTER TABLE social_content ADD COLUMN IF NOT EXISTS graphic_text TEXT`;
     await sql`ALTER TABLE social_content ADD COLUMN IF NOT EXISTS beth_schedule_approved BOOLEAN DEFAULT FALSE`;
+    await sql`ALTER TABLE social_content ADD COLUMN IF NOT EXISTS thread_id BIGINT`;
     await sql`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS doc_link TEXT`;
     await sql`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS beth_complete BOOLEAN DEFAULT FALSE`;
+
+    // Backfill thread_id for existing posts (each becomes its own thread)
+    await sql`UPDATE social_content SET thread_id = id WHERE thread_id IS NULL`;
 
     // ── Social Focuses table (dashboard top 3 goals) ───────────────────────
     await sql`
@@ -236,6 +240,7 @@ export async function GET(request: NextRequest) {
     await sql`CREATE INDEX IF NOT EXISTS idx_blog_posts_publish_date ON blog_posts(publish_date)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_campaigns_send_date ON campaigns(send_date)`;
 
+    await sql`CREATE INDEX IF NOT EXISTS idx_social_content_thread_id ON social_content(thread_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_post_analytics_report_month ON post_analytics(report_month)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_post_analytics_platform ON post_analytics(platform)`;

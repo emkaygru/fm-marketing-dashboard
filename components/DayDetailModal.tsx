@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink, ChevronLeft, ChevronRight, Link } from 'lucide-react';
+import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink, ChevronLeft, ChevronRight, Link, CalendarDays } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from './StatusBadge';
 
@@ -15,6 +15,7 @@ interface ContentItem {
   caption: string;
   status: string;
   assigned_to: string;
+  thread_id?: number;
 }
 
 interface DayDetailModalProps {
@@ -29,6 +30,7 @@ interface DayDetailModalProps {
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: string) => void;
   onAddContent: () => void;
+  onMoveDate?: (id: number, newDate: string, moveThread: boolean, threadId?: number) => Promise<void>;
 }
 
 // ── Type badge colors ─────────────────────────────────────────────────
@@ -170,9 +172,14 @@ export default function DayDetailModal({
   onDelete,
   onStatusChange,
   onAddContent,
+  onMoveDate,
 }: DayDetailModalProps) {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [movingId, setMovingId] = useState<number | null>(null);
+  const [moveDate, setMoveDate] = useState('');
+  const [moveThread, setMoveThread] = useState(false);
+  const [moveSaving, setMoveSaving] = useState(false);
 
   const handleCopyLink = () => {
     if (!date) return;
@@ -356,6 +363,53 @@ export default function DayDetailModal({
                       </select>
                     </div>
 
+                    {/* Move Date inline picker */}
+                    {movingId === item.id && (
+                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <p className="text-xs font-semibold text-blue-700 mb-2">Move to a new date</p>
+                        <input
+                          type="date"
+                          value={moveDate}
+                          onChange={(e) => setMoveDate(e.target.value)}
+                          className="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 bg-white mb-2"
+                        />
+                        {item.thread_id && item.thread_id !== item.id && (
+                          <label className="flex items-center gap-2 text-xs text-blue-700 mb-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={moveThread}
+                              onChange={(e) => setMoveThread(e.target.checked)}
+                              className="w-3.5 h-3.5 rounded border-blue-300 text-blue-600"
+                            />
+                            Move all posts in this group
+                          </label>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            disabled={!moveDate || moveSaving}
+                            onClick={async () => {
+                              if (!moveDate || !onMoveDate) return;
+                              setMoveSaving(true);
+                              await onMoveDate(item.id, moveDate, moveThread, item.thread_id);
+                              setMovingId(null);
+                              setMoveDate('');
+                              setMoveThread(false);
+                              setMoveSaving(false);
+                            }}
+                            className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {moveSaving ? 'Moving…' : 'Apply'}
+                          </button>
+                          <button
+                            onClick={() => { setMovingId(null); setMoveDate(''); setMoveThread(false); }}
+                            className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Action Buttons */}
                     <div className="flex items-center flex-wrap gap-2 pt-3 border-t border-gray-200">
                       <button
@@ -379,6 +433,23 @@ export default function DayDetailModal({
                         <Copy className="w-4 h-4" />
                         Duplicate
                       </button>
+                      {onMoveDate && (
+                        <button
+                          onClick={() => {
+                            setMovingId(movingId === item.id ? null : item.id);
+                            setMoveDate(item.post_date || '');
+                            setMoveThread(false);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                            movingId === item.id
+                              ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <CalendarDays className="w-4 h-4" />
+                          Move
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeleteClick(item.id, content.length === 1)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ml-auto ${

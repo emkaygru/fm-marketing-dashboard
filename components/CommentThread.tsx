@@ -20,6 +20,7 @@ interface CommentThreadProps {
   isOpen: boolean;
   onClose: () => void;
   contentId: number | null;
+  threadId?: number; // if set and differs from contentId, fetch all thread comments
   contentTitle?: string;
   fieldContext?: string; // 'Caption' | 'Asset' — pre-tags the new comment
 }
@@ -49,6 +50,7 @@ export default function CommentThread({
   isOpen,
   onClose,
   contentId,
+  threadId,
   contentTitle,
   fieldContext,
 }: CommentThreadProps) {
@@ -73,10 +75,16 @@ export default function CommentThread({
     }
   }, [isOpen, fieldContext]);
 
+  // Fetch via thread_id when the post is part of a multi-post group (shows all group comments)
+  const isThreaded = threadId != null && threadId !== contentId;
+
   const fetchComments = async () => {
     if (!contentId) return;
     try {
-      const response = await fetch(`/api/social-content/comments?content_id=${contentId}`);
+      const url = isThreaded
+        ? `/api/social-content/comments?thread_id=${threadId}`
+        : `/api/social-content/comments?content_id=${contentId}`;
+      const response = await fetch(url);
       const data = await response.json();
       setComments(data.comments || []);
     } catch (error) {
@@ -159,7 +167,7 @@ export default function CommentThread({
     return 'bg-orange-50 border-orange-200';
   };
 
-  const renderComment = (comment: Comment, isReply = false) => {
+  const renderComment = (comment: Comment & { platform?: string }, isReply = false) => {
     const pill = getFieldPill(comment.comment_text);
     const displayText = stripFieldPrefix(comment.comment_text);
 
@@ -169,11 +177,16 @@ export default function CommentThread({
           className={`p-3 rounded-lg border ${getBubbleClass(comment.comment_text, comment.resolved)}`}
         >
           <div className="flex items-start justify-between mb-2 gap-2">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <span className="font-medium text-sm text-gray-900">{comment.author_name}</span>
               <span className="text-xs text-gray-500 ml-2">
                 {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
               </span>
+              {isThreaded && comment.platform && (
+                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                  {comment.platform}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {!isReply && (
@@ -251,10 +264,15 @@ export default function CommentThread({
     <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-2xl border-l border-gray-200 z-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <MessageCircle className="w-5 h-5 text-fm-blue" />
           <h2 className="text-lg font-semibold text-gray-900">Comments</h2>
           <span className="text-sm text-gray-500">({comments.length})</span>
+          {isThreaded && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+              Grouped thread
+            </span>
+          )}
         </div>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />

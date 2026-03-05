@@ -90,7 +90,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
     const monday = new Date(year, month - 1, day + diff);
     const weekOf = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
 
-    const baseData = {
+    const baseData: Record<string, any> = {
       post_date: formData.post_date,
       content_type: formData.content_type,
       content_needs: formData.content_needs,
@@ -101,6 +101,11 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
       week_of: weekOf,
       created_by: 'Emily',
     };
+
+    // In duplicate mode, carry over the thread_id so the new post(s) join the same thread
+    if (mode === 'duplicate' && initialData) {
+      baseData.thread_id = initialData.thread_id || initialData.id || undefined;
+    }
 
     try {
       if (mode === 'edit' && initialData) {

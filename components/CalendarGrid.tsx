@@ -29,6 +29,7 @@ interface ContentItem {
   status: string;
   content_needs: string;
   assigned_to?: string;
+  thread_id?: number;
 }
 
 interface CalendarGridProps {

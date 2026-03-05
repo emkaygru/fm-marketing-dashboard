@@ -37,10 +37,59 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const thread_id = searchParams.get('thread_id');
+
+  // ── Thread-level comments: all posts sharing this thread_id ──────────
+  if (thread_id) {
+    try {
+      // Find all content_ids in this thread + their platforms
+      const contentResult = await sql`
+        SELECT id, platform FROM social_content WHERE thread_id = ${thread_id}
+      `;
+      const platformMap: Record<number, string> = {};
+      const contentIds: number[] = contentResult.rows.map((r: any) => {
+        platformMap[r.id] = r.platform;
+        return r.id;
+      });
+
+      if (contentIds.length === 0) {
+        return NextResponse.json({ comments: [], count: 0 });
+      }
+
+      const result = await sql.query(
+        `SELECT * FROM content_comments WHERE content_id = ANY($1::bigint[]) ORDER BY created_at ASC`,
+        [contentIds]
+      );
+
+      const comments = result.rows.map((c: any) => ({ ...c, platform: platformMap[c.content_id] || '' }));
+      const commentMap = new Map<number, any>();
+      const threadedComments: any[] = [];
+
+      comments.forEach((c: any) => commentMap.set(c.id, { ...c, replies: [] }));
+      comments.forEach((c: any) => {
+        const node = commentMap.get(c.id)!;
+        if (c.parent_comment_id) {
+          const parent = commentMap.get(c.parent_comment_id);
+          if (parent) parent.replies.push(node);
+        } else {
+          threadedComments.push(node);
+        }
+      });
+
+      return NextResponse.json({ comments: threadedComments, count: comments.length });
+    } catch (error) {
+      console.error('Error fetching thread comments:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch comments', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      );
+    }
+  }
+
   // ── Single-item threaded comments mode ───────────────────────────────
   if (!content_id) {
     return NextResponse.json(
-      { error: 'content_id or counts_for is required' },
+      { error: 'content_id, thread_id, or counts_for is required' },
       { status: 400 }
     );
   }

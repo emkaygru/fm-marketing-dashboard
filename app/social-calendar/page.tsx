@@ -33,6 +33,11 @@ function SocialCalendarContent() {
     count: number; date: string; platform: string; ids: number[];
   } | null>(null);
 
+  const [threadSyncPrompt, setThreadSyncPrompt] = useState<{
+    siblings: { id: number; platform: string }[];
+    updates: { caption?: string; asset_link?: string };
+  } | null>(null);
+
   // Load view preference from localStorage
   useEffect(() => {
     const savedView = localStorage.getItem('socialCalendarView');
@@ -111,21 +116,80 @@ function SocialCalendarContent() {
   const handleFormSubmit = async (data: any | any[]): Promise<void> => {
     // data is an array when creating/duplicating with multiple platforms selected
     const payloads: any[] = Array.isArray(data) ? data : [data];
-    const method = formMode === 'edit' ? 'PUT' : 'POST';
 
-    for (const payload of payloads) {
+    if (formMode === 'edit') {
+      // Single edit — PUT and check for thread siblings needing a sync prompt
       const response = await fetch('/api/social-content', {
-        method,
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payloads[0]),
       });
-
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.error || `Server error ${response.status}`);
       }
+      const result = await response.json();
+      if (result.thread_siblings?.length > 0) {
+        const payload = payloads[0];
+        setThreadSyncPrompt({
+          siblings: result.thread_siblings,
+          updates: {
+            ...(payload.caption !== undefined && { caption: payload.caption }),
+            ...(payload.asset_link !== undefined && { asset_link: payload.asset_link }),
+          },
+        });
+        setTimeout(() => setThreadSyncPrompt(null), 12000);
+      }
+    } else {
+      // POST (create / duplicate): chain thread_id from first response
+      let sharedThreadId: number | null = null;
+      for (const payload of payloads) {
+        const postRes: Response = await fetch('/api/social-content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...payload,
+            // Pass the shared thread_id for 2nd, 3rd posts (or duplicate's inherited id)
+            thread_id: payload.thread_id ?? sharedThreadId ?? undefined,
+          }),
+        });
+        if (!postRes.ok) {
+          const error = await postRes.json().catch(() => ({}));
+          throw new Error(error.error || `Server error ${postRes.status}`);
+        }
+        if (sharedThreadId === null) {
+          const postData: any = await postRes.json();
+          sharedThreadId = postData.content?.thread_id ?? null;
+        }
+      }
     }
 
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleMoveDate = async (id: number, newDate: string, threadId?: number) => {
+    // Move a post (and optionally all thread siblings) to a new date
+    const idsToMove: number[] = [id];
+
+    if (threadId) {
+      // Also move all siblings in the thread
+      try {
+        const res = await fetch(`/api/social-content?startDate=2020-01-01&endDate=2030-12-31`);
+        const data = await res.json();
+        const siblings = (data.content || []).filter(
+          (c: any) => c.thread_id === threadId && c.id !== id
+        );
+        siblings.forEach((s: any) => idsToMove.push(s.id));
+      } catch { /* non-fatal — move just the one post */ }
+    }
+
+    for (const sid of idsToMove) {
+      await fetch('/api/social-content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: sid, post_date: newDate }),
+      });
+    }
     setRefreshTrigger((prev) => prev + 1);
   };
 
@@ -236,9 +300,43 @@ function SocialCalendarContent() {
         isOpen={isCommentThreadOpen}
         onClose={() => { setIsCommentThreadOpen(false); setFieldContext(undefined); }}
         contentId={selectedContent?.id}
+        threadId={selectedContent?.thread_id}
         contentTitle={selectedContent?.content_needs}
         fieldContext={fieldContext}
       />
+
+      {/* Thread sync toast — prompts to apply caption/asset edit to all sibling posts */}
+      {threadSyncPrompt && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-white border border-blue-300 rounded-xl shadow-lg text-sm max-w-sm w-full mx-4">
+          <span className="text-blue-500 text-base">🔗</span>
+          <span className="flex-1 text-gray-700">
+            Apply changes to{' '}
+            {threadSyncPrompt.siblings.map((s) => s.platform).join(', ')} too?
+          </span>
+          <button
+            onClick={async () => {
+              for (const sibling of threadSyncPrompt.siblings) {
+                await fetch('/api/social-content', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: sibling.id, ...threadSyncPrompt.updates }),
+                });
+              }
+              setRefreshTrigger((p) => p + 1);
+              setThreadSyncPrompt(null);
+            }}
+            className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 whitespace-nowrap"
+          >
+            Yes, sync
+          </button>
+          <button
+            onClick={() => setThreadSyncPrompt(null)}
+            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+          >
+            No
+          </button>
+        </div>
+      )}
 
       {/* Bulk approve toast */}
       {bulkApprovePrompt && (
@@ -327,6 +425,11 @@ function SocialCalendarContent() {
           setFormMode('create');
           setSelectedContent(selectedDate ? { post_date: format(selectedDate, 'yyyy-MM-dd') } : null);
           setIsFormOpen(true);
+        }}
+        onMoveDate={async (id, newDate, moveThread, threadId) => {
+          await handleMoveDate(id, newDate, moveThread ? threadId : undefined);
+          // Update the day modal content to reflect the move (post is now on a different date)
+          setSelectedDayContent((prev) => prev.filter((c) => c.id !== id));
         }}
       />
     </div>
