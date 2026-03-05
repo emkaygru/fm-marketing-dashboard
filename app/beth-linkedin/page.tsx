@@ -89,7 +89,7 @@ function LIPostCard({ item, onSaved }: { item: LinkedInPost; onSaved: (updated: 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-gray-900">
-            {format(localDate(item.post_date), 'EEE, MMM d')}
+            {item.post_date ? format(localDate(item.post_date), 'EEE, MMM d') : '—'}
           </span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 font-medium">
             {item.content_type}
@@ -217,7 +217,7 @@ function BlogPostCard({ post, onSaved }: { post: BlogPost; onSaved: (updated: Bl
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-gray-900">
-            {format(localDate(post.publish_date), 'EEE, MMM d')}
+            {post.publish_date ? format(localDate(post.publish_date), 'EEE, MMM d') : '—'}
           </span>
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusClass(post.status)}`}>
             {statusLabel(post.status)}

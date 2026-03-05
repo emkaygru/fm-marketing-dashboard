@@ -6,6 +6,18 @@ import { format } from 'date-fns';
 import BlogPostForm from '@/components/BlogPostForm';
 import StatusBadge from '@/components/StatusBadge';
 
+// Parse YYYY-MM-DD as local midnight to avoid UTC timezone shift + guard against null
+const safeDate = (s: string | null | undefined): Date | null => {
+  if (!s) return null;
+  const parts = s.split('-').map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+};
+const formatDate = (s: string | null | undefined, fmt: string, fallback = '—') => {
+  const d = safeDate(s);
+  return d ? format(d, fmt) : fallback;
+};
+
 interface BlogPost {
   id: number;
   title: string;
@@ -184,9 +196,9 @@ export default function BlogPostsPage() {
                   posts.map((post) => (
                     <tr key={post.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {format(new Date(post.publish_date), 'MMM d, yyyy')}
+                        {formatDate(post.publish_date, 'MMM d, yyyy')}
                         <div className="text-xs text-gray-500">
-                          {format(new Date(post.publish_date), 'EEEE')}
+                          {formatDate(post.publish_date, 'EEEE')}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 max-w-md">

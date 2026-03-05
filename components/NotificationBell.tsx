@@ -186,7 +186,7 @@ export default function NotificationBell() {
                           <p className="text-xs text-gray-500 truncate mt-0.5">{n.post_title}</p>
                         )}
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                          {n.created_at ? formatDistanceToNow(new Date(n.created_at), { addSuffix: true }) : ''}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
