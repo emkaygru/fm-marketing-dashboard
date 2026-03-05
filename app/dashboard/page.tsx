@@ -5,7 +5,7 @@ import { format, addWeeks, startOfWeek } from 'date-fns';
 
 // Parse YYYY-MM-DD as local midnight to avoid UTC-to-local timezone shift in US timezones
 const localDate = (dateStr: string): Date => {
-  const [y, m, d] = dateStr.split('-').map(Number);
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
   return new Date(y, m - 1, d);
 };
 import { ExternalLink, Calendar, ArrowRight, Pencil, Check, X } from 'lucide-react';

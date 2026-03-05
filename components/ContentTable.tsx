@@ -7,7 +7,7 @@ import { format, addWeeks, startOfWeek, endOfWeek } from 'date-fns';
 // parseISO("2026-02-02") = UTC midnight = Feb 1 at 7pm EST → displays as Feb 1 (wrong).
 // localDate("2026-02-02") = local midnight = Feb 2 at 12am EST → displays as Feb 2 (correct).
 const localDate = (dateStr: string): Date => {
-  const [y, m, d] = dateStr.split('-').map(Number);
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
   return new Date(y, m - 1, d);
 };
 import { Edit2, Trash2, Copy, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';

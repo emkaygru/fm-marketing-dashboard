@@ -34,7 +34,7 @@ interface BlogPost {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const localDate = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const localDate = (s: string) => { const [y, m, d] = s.slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
 
 const statusClass = (status: string) => {
   switch (status) {
