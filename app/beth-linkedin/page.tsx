@@ -354,10 +354,12 @@ export default function BethLinkedInPage() {
     }
   };
 
-  // Group posts by week
+  // Group posts by week — fall back to computing from post_date if week_of is null
   const postsByWeek: Record<string, LinkedInPost[]> = {};
   posts.forEach((p) => {
-    const key = p.week_of.split('T')[0];
+    const key = p.week_of
+      ? p.week_of.split('T')[0]
+      : format(startOfWeek(localDate(p.post_date), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     if (!postsByWeek[key]) postsByWeek[key] = [];
     postsByWeek[key].push(p);
   });

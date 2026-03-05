@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, ArrowRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 interface Notification {
   id: number;
@@ -36,7 +37,24 @@ function saveSeenIds(ids: Set<number>) {
   } catch {}
 }
 
+// Return the URL to navigate to when clicking a notification, or null if not navigable
+function getNotifLink(n: Notification): string | null {
+  if (n.type === 'beth_blog') return '/blog-posts';
+  if (n.post_date) return `/social-calendar?date=${n.post_date.split('T')[0]}`;
+  if (n.content_id) return `/social-calendar`;
+  return null;
+}
+
+// Avatar initials + color by author
+function avatarInfo(author: string): { initials: string; color: string } {
+  if (author === 'Beth') return { initials: 'B', color: 'bg-teal-100 text-teal-700' };
+  if (author === 'Victoria') return { initials: 'V', color: 'bg-fm-orange/20 text-fm-orange' };
+  const initials = author ? author.charAt(0).toUpperCase() : '?';
+  return { initials, color: 'bg-gray-100 text-gray-600' };
+}
+
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -140,26 +158,45 @@ export default function NotificationBell() {
                 {notifications.map((n) => {
                   const seen = getSeenIds();
                   const isUnread = !seen.has(n.id);
+                  const link = getNotifLink(n);
+                  const { initials, color } = avatarInfo(n.author_name);
                   return (
                     <li
                       key={n.id}
-                      className={`px-4 py-3 flex gap-3 ${isUnread ? 'bg-fm-blue/5' : ''}`}
+                      onClick={() => {
+                        if (link) {
+                          setIsOpen(false);
+                          router.push(link);
+                        }
+                      }}
+                      className={`px-4 py-3 flex gap-3 transition-colors
+                        ${isUnread ? 'bg-fm-blue/5' : ''}
+                        ${link ? 'cursor-pointer hover:bg-gray-50' : ''}
+                      `}
                     >
                       {/* Avatar */}
-                      <div className="w-8 h-8 rounded-full bg-fm-orange/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-fm-orange">
-                        V
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${color}`}>
+                        {initials}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm text-gray-800 leading-snug">
                           {n.message}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        {n.post_title && (
+                          <p className="text-xs text-gray-500 truncate mt-0.5">{n.post_title}</p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-0.5">
                           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                         </p>
                       </div>
-                      {isUnread && (
-                        <div className="w-2 h-2 rounded-full bg-fm-orange flex-shrink-0 mt-1.5" />
-                      )}
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {isUnread && (
+                          <div className="w-2 h-2 rounded-full bg-fm-orange mt-1" />
+                        )}
+                        {link && (
+                          <ArrowRight className="w-3.5 h-3.5 text-gray-300 mt-auto" />
+                        )}
+                      </div>
                     </li>
                   );
                 })}
@@ -170,7 +207,7 @@ export default function NotificationBell() {
           {/* Footer hint */}
           <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
             <p className="text-xs text-gray-400 text-center">
-              Notifications from Victoria's comments
+              Click a notification to jump to the post
             </p>
           </div>
         </div>
