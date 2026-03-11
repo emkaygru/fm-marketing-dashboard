@@ -40,8 +40,10 @@ function saveSeenIds(ids: Set<number>) {
 // Return the URL to navigate to when clicking a notification, or null if not navigable
 function getNotifLink(n: Notification): string | null {
   if (n.type === 'beth_blog') return '/blog-posts';
-  if (n.post_date) return `/social-calendar?date=${n.post_date.split('T')[0]}`;
-  if (n.content_id) return `/social-calendar`;
+  const date = n.post_date ? n.post_date.slice(0, 10) : null;
+  if (date && n.content_id) return `/social-calendar?date=${date}&content_id=${n.content_id}`;
+  if (date) return `/social-calendar?date=${date}`;
+  if (n.content_id) return `/social-calendar?content_id=${n.content_id}`;
   return null;
 }
 

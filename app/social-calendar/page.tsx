@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { format } from 'date-fns';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Plus, Calendar as CalendarIcon, List } from 'lucide-react';
@@ -15,9 +15,10 @@ function SocialCalendarContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const weekParam = searchParams.get('week') || undefined; // e.g. "2026-03-02" from dashboard "View" link
-  const dateParam = searchParams.get('date') || undefined; // e.g. "2026-03-05" from a shared day link
-  // Capture initial dateParam in a ref so our mount effect doesn't need it as a dep
-  const initialDateParam = useRef(dateParam);
+  const dateParam = searchParams.get('date') || undefined; // e.g. "2026-03-05" from a notification/shared link
+  const contentIdParam = searchParams.get('content_id') || undefined; // e.g. comment notification deep-link
+  // Track the last param combo we handled to avoid double-firing when the URL updates internally
+  const lastHandledRef = useRef<string>('');
 
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -95,23 +96,43 @@ function SocialCalendarContent() {
     router.replace('/social-calendar', { scroll: false });
   };
 
-  // On mount: if a ?date= param is present (shared link), open the modal for that day
+  // Deep-link handler: fires whenever ?date= or ?content_id= params change (notification clicks,
+  // shared links). Uses a dedupe ref so internal router.replace calls don't re-trigger this.
   useEffect(() => {
-    const param = initialDateParam.current;
-    if (!param) return;
-    // Switch to calendar view for a nicer shared experience
-    setViewMode('calendar');
+    if (!dateParam && !contentIdParam) return;
+    const key = `${dateParam ?? ''}|${contentIdParam ?? ''}`;
+    if (lastHandledRef.current === key) return; // already handled this exact combo
+    lastHandledRef.current = key;
+
     fetch('/api/social-content')
       .then((r) => r.json())
       .then((data) => {
-        const items = (data.content || []).filter((c: any) => c.post_date === param);
-        const [y, m, d] = param.split('-').map(Number);
+        const allContent: any[] = data.content || [];
+
+        // Resolve the specific item if content_id was provided
+        const cid = contentIdParam ? parseInt(contentIdParam, 10) : null;
+        const targetItem = cid ? allContent.find((c: any) => c.id === cid) : null;
+
+        // Determine which date to show (prefer explicit dateParam, fallback to item's date)
+        const resolvedDate = dateParam ?? targetItem?.post_date?.slice(0, 10);
+        if (!resolvedDate) return;
+
+        // Filter day content — use .slice(0,10) to handle Postgres ISO timestamps
+        const dayItems = allContent.filter((c: any) => c.post_date?.slice(0, 10) === resolvedDate);
+        const [y, m, d] = resolvedDate.split('-').map(Number);
         setSelectedDate(new Date(y, m - 1, d));
-        setSelectedDayContent(items);
+        setSelectedDayContent(dayItems);
         setIsDayDetailOpen(true);
+
+        // If a specific post was linked (from a comment notification), open its comment thread
+        if (targetItem) {
+          setSelectedContent(targetItem);
+          setFieldContext(undefined);
+          setIsCommentThreadOpen(true);
+        }
       })
       .catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dateParam, contentIdParam]);
 
   const handleFormSubmit = async (data: any | any[]): Promise<void> => {
     // data is an array when creating/duplicating with multiple platforms selected
