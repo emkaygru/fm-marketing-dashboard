@@ -244,17 +244,17 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               <>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Carousel Images
-                  <span className="ml-1 text-xs font-normal text-gray-400">(one Google Drive file URL per line)</span>
+                  <span className="ml-1 text-xs font-normal text-gray-400">(a Google Drive folder link, or one image link per line)</span>
                 </label>
                 <textarea
                   value={formData.asset_link}
                   onChange={(e) => setFormData({ ...formData, asset_link: e.target.value })}
                   rows={5}
-                  placeholder={"https://drive.google.com/file/d/abc123/view\nhttps://drive.google.com/file/d/def456/view\n..."}
+                  placeholder={"https://drive.google.com/drive/folders/abc123\n— or —\nhttps://drive.google.com/file/d/abc123/view\nhttps://drive.google.com/file/d/def456/view"}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 placeholder-gray-400 font-mono text-xs"
                 />
                 <p className="mt-1 text-xs text-gray-400">
-                  Share each image in Drive → Copy link → paste here. Images appear as a swipeable preview.
+                  Paste the folder link and its images show in filename order (name them _01, _02, …). Or paste each image's link.
                 </p>
               </>
             ) : (
