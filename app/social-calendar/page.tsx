@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { format } from 'date-fns';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Plus, Calendar as CalendarIcon, List } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Calendar as CalendarIcon, List, Upload } from 'lucide-react';
 import ContentTable from '@/components/ContentTable';
 import CalendarGrid from '@/components/CalendarGrid';
 import ContentForm from '@/components/ContentForm';
@@ -271,6 +272,14 @@ function SocialCalendarContent() {
                 </button>
               </div>
 
+              <Link
+                href="/social-calendar/import"
+                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">Bulk Import</span>
+              </Link>
+
               <button
                 onClick={handleAddContent}
                 className="flex items-center gap-2 px-4 py-2 bg-fm-blue text-white rounded-md hover:bg-fm-navy transition-colors text-sm font-medium whitespace-nowrap"
@@ -304,6 +313,17 @@ function SocialCalendarContent() {
               openDayModal(date, dayContent);
             }}
             refreshTrigger={refreshTrigger}
+            onMoveContent={async (ids, newDate) => {
+              for (const id of ids) {
+                const res = await fetch('/api/social-content', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id, post_date: newDate }),
+                });
+                if (!res.ok) throw new Error('Failed to move post');
+              }
+              setRefreshTrigger((prev) => prev + 1);
+            }}
           />
         )}
       </div>
