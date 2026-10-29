@@ -35,12 +35,15 @@ interface ContentItem {
 interface CalendarGridProps {
   onDayClick: (date: Date, content: ContentItem[]) => void;
   refreshTrigger: number;
+  onMoveContent?: (ids: number[], newDate: string) => Promise<void>;
 }
 
-export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGridProps) {
+export default function CalendarGrid({ onDayClick, refreshTrigger, onMoveContent }: CalendarGridProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
 
   useEffect(() => {
     fetchContent();
@@ -73,6 +76,32 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
 
   const getContentForDay = (day: Date) => {
     return content.filter((item) => isSameDay(localDate(item.post_date), day));
+  };
+
+  // Dropping a post moves it plus its cross-platform siblings scheduled on the same day
+  const handleDrop = async (day: Date) => {
+    const item = content.find((c) => c.id === draggingId);
+    setDraggingId(null);
+    setDropTarget(null);
+    if (!item || !onMoveContent) return;
+    const newDate = format(day, 'yyyy-MM-dd');
+    if (item.post_date.slice(0, 10) === newDate) return;
+
+    const ids = content
+      .filter((c) =>
+        c.id === item.id ||
+        (item.thread_id && c.thread_id === item.thread_id && c.post_date.slice(0, 10) === item.post_date.slice(0, 10))
+      )
+      .map((c) => c.id);
+
+    const previous = content;
+    setContent((prev) => prev.map((c) => (ids.includes(c.id) ? { ...c, post_date: newDate } : c)));
+    try {
+      await onMoveContent(ids, newDate);
+    } catch (error) {
+      console.error('Error moving content:', error);
+      setContent(previous);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -174,14 +203,25 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
           const dayContent = getContentForDay(day);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const isToday = isSameDay(day, new Date());
+          const dayKey = format(day, 'yyyy-MM-dd');
 
           return (
             <div
               key={day.toISOString()}
               onClick={() => onDayClick(day, dayContent)}
+              onDragOver={(e) => {
+                if (draggingId === null) return;
+                e.preventDefault();
+                if (dropTarget !== dayKey) setDropTarget(dayKey);
+              }}
+              onDragLeave={() => setDropTarget((t) => (t === dayKey ? null : t))}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDrop(day);
+              }}
               className={`min-h-20 md:min-h-24 p-1.5 md:p-2 border-r border-b border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors ${
                 !isCurrentMonth ? 'bg-gray-50' : ''
-              } ${isToday ? 'bg-blue-50' : ''}`}
+              } ${isToday ? 'bg-blue-50' : ''} ${dropTarget === dayKey ? 'ring-2 ring-inset ring-fm-blue bg-blue-50' : ''}`}
             >
               <div
                 className={`text-sm font-medium mb-1 ${
@@ -195,7 +235,18 @@ export default function CalendarGrid({ onDayClick, refreshTrigger }: CalendarGri
                 {dayContent.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
-                    className={`text-xs px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${getTypeBorderColor(item.content_type, item.assigned_to)} truncate`}
+                    draggable={!!onMoveContent}
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', String(item.id));
+                      setDraggingId(item.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggingId(null);
+                      setDropTarget(null);
+                    }}
+                    className={`text-xs ${onMoveContent ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingId === item.id ? 'opacity-40' : ''} px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${getTypeBorderColor(item.content_type, item.assigned_to)} truncate`}
                     title={`${item.content_type} · ${item.platform} — ${item.content_needs || 'No description'}`}
                   >
                     <span className="font-bold mr-0.5 opacity-70">{getTypeAbbr(item.content_type, item.assigned_to)}</span>

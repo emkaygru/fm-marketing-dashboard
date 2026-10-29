@@ -3,6 +3,12 @@ import { sql } from '@vercel/postgres';
 
 export const dynamic = 'force-dynamic';
 
+const UPDATABLE_COLUMNS = new Set([
+  'post_date', 'week_of', 'content_type', 'platform', 'content_needs', 'asset_link',
+  'caption', 'status', 'assigned_to', 'created_by', 'graphic_text',
+  'beth_schedule_approved', 'thread_id',
+]);
+
 // GET all social content (with optional filtering by date range, status, platform)
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -148,26 +154,30 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Build dynamic update query
-    const updateFields = Object.keys(updates)
-      .filter(key => updates[key] !== undefined)
-      .map((key, index) => `${key} = $${index + 2}`)
-      .join(', ');
+    // Build dynamic update query (only known columns — keys are interpolated into SQL)
+    const keys = Object.keys(updates).filter(
+      key => updates[key] !== undefined && UPDATABLE_COLUMNS.has(key) && key !== 'week_of'
+    );
 
-    if (!updateFields) {
+    if (keys.length === 0) {
       return NextResponse.json(
         { error: 'No fields to update' },
         { status: 400 }
       );
     }
 
-    const values = Object.keys(updates)
-      .filter(key => updates[key] !== undefined)
-      .map(key => updates[key]);
+    const assignments = keys.map((key, index) => `${key} = $${index + 2}`);
+    // Keep week_of in sync whenever the post moves to a new date
+    const dateIndex = keys.indexOf('post_date');
+    if (dateIndex !== -1) {
+      assignments.push(`week_of = date_trunc('week', $${dateIndex + 2}::date)::date`);
+    }
+
+    const values = keys.map(key => updates[key]);
 
     const query = `
       UPDATE social_content
-      SET ${updateFields}, updated_at = CURRENT_TIMESTAMP
+      SET ${assignments.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING *
     `;
