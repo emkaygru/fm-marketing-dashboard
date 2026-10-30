@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Edit2, MessageCircle, Copy, Trash2, ExternalLink, ChevronLeft, ChevronRight, Link, CalendarDays } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from './StatusBadge';
@@ -72,6 +72,15 @@ const getAssetPreview = (url: string): AssetPreview => {
   return null;
 };
 
+/** Drive folder id from a /drive/folders/<id> link */
+const gdriveFolderId = (url: string): string | null => {
+  const m = url.match(/\/drive\/(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+};
+
+/** First link in an asset_link (carousels can hold several comma/newline-separated links) */
+const firstLink = (assetLink: string): string => assetLink.split(/[\n,]/).map((s) => s.trim()).find(Boolean) || assetLink;
+
 /** Parse a carousel asset_link (newline or comma-separated Drive URLs) into thumbnail URLs */
 const getCarouselImages = (assetLink: string): string[] => {
   if (!assetLink) return [];
@@ -109,6 +118,37 @@ function DriveImage({ src, alt, className }: { src: string; alt: string; classNa
       onError={() => setFailed(true)}
     />
   );
+}
+
+// ── Drive folder → carousel ───────────────────────────────────────────
+// Lists the folder's images (sorted by filename) and serves them through the
+// dashboard's service account, so viewers don't need access to the folder.
+function DriveFolderPreview({ folderId }: { folderId: string }) {
+  const [images, setImages] = useState<string[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/drive-folder?id=${folderId}`)
+      .then(async (r) => {
+        const data = await r.json();
+        if (cancelled) return;
+        if (!r.ok) {
+          setError(data.serviceAccount
+            ? `Share this folder with ${data.serviceAccount} to preview it`
+            : 'Folder preview unavailable');
+          return;
+        }
+        setImages((data.files || []).map((f: { id: string }) => `/api/drive-image?id=${f.id}`));
+      })
+      .catch(() => !cancelled && setError('Folder preview unavailable'));
+    return () => { cancelled = true; };
+  }, [folderId]);
+
+  if (error) return <p className="text-xs text-gray-400 mb-1.5">{error}</p>;
+  if (!images) return <div className="w-full h-40 rounded-md bg-gray-100 animate-pulse mb-1.5" />;
+  if (images.length === 0) return <p className="text-xs text-gray-400 mb-1.5">No images in this folder yet</p>;
+  return <CarouselPreview images={images} folderUrl="" />;
 }
 
 // ── Carousel slide viewer ─────────────────────────────────────────────
@@ -254,6 +294,7 @@ export default function DayDetailModal({
             <div className="space-y-4">
               {content.map((item) => {
                 const assetPreview = item.asset_link ? getAssetPreview(item.asset_link) : null;
+                const folderId = item.asset_link ? gdriveFolderId(item.asset_link) : null;
 
                 return (
                   <div
@@ -315,8 +356,10 @@ export default function DayDetailModal({
                           )}
                         </div>
 
-                        {/* Carousel: multi-image slide viewer */}
-                        {item.content_type === 'Carousel' ? (
+                        {/* Drive folder link: show the folder's images as a carousel */}
+                        {folderId ? (
+                          <DriveFolderPreview folderId={folderId} />
+                        ) : item.content_type === 'Carousel' ? (
                           <CarouselPreview
                             images={getCarouselImages(item.asset_link)}
                             folderUrl={item.asset_link}
@@ -332,12 +375,12 @@ export default function DayDetailModal({
                         ) : null}
 
                         <a
-                          href={item.asset_link}
+                          href={firstLink(item.asset_link)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-sm text-fm-blue hover:text-fm-navy underline"
                         >
-                          {assetPreview?.type === 'canva' ? '🎨 View in Canva' : item.content_type === 'Carousel' ? 'View Folder' : 'View Asset'}
+                          {assetPreview?.type === 'canva' ? '🎨 View in Canva' : folderId ? 'View Folder' : 'View Asset'}
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
