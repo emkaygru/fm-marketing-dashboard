@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 const PLATFORMS = ['Instagram', 'Facebook', 'LinkedIn'];
 const CONTENT_TYPES = ['Post', 'Carousel', 'Reel', 'Story'];
-const STATUSES = ['draft', 'paused', 'ready_for_approval', 'needs_edits', 'approved', 'scheduled', 'posted'];
+const STATUSES = ['draft', 'victoria_post', 'paused', 'ready_for_approval', 'needs_edits', 'approved', 'scheduled', 'posted'];
 
 interface BulkPost {
   post_date: string;

@@ -15,6 +15,7 @@ module.exports = {
         'fm-gray': '#48484a',      // Davy's Gray
         'fm-teal': '#2fb7c8',      // Accent teal
         'fm-yellow': '#f7d878',    // Accent yellow
+        'fm-lavender': '#cdbcf5',  // Victoria Post status
       },
     },
   },

@@ -444,7 +444,7 @@ function SocialCalendarContent() {
                     (c) => c.id !== id &&
                       c.post_date === justApproved.post_date &&
                       c.platform === justApproved.platform &&
-                      c.status !== 'approved' && c.status !== 'posted'
+                      c.status !== 'approved' && c.status !== 'posted' && c.status !== 'victoria_post'
                   );
                   if (siblings.length > 0) {
                     setBulkApprovePrompt({

@@ -7,6 +7,8 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     switch (status.toLowerCase()) {
       case 'draft':
         return 'bg-gray-100 text-gray-700 border-gray-300';
+      case 'victoria_post':
+        return 'bg-white text-gray-900 border-fm-lavender';
       case 'paused':
         return 'bg-yellow-100 text-yellow-700 border-yellow-300';
       case 'ready_for_approval':

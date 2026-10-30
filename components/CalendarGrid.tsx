@@ -108,6 +108,8 @@ export default function CalendarGrid({ onDayClick, refreshTrigger, onMoveContent
     switch (status.toLowerCase()) {
       case 'draft':
         return 'bg-gray-200 text-gray-800';
+      case 'victoria_post':
+        return 'bg-fm-lavender text-gray-900';
       case 'paused':
         return 'bg-yellow-200 text-yellow-900';
       case 'ready_for_approval':
@@ -246,7 +248,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger, onMoveContent
                       setDraggingId(null);
                       setDropTarget(null);
                     }}
-                    className={`text-xs ${onMoveContent ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingId === item.id ? 'opacity-40' : ''} px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${getTypeBorderColor(item.content_type, item.assigned_to)} truncate`}
+                    className={`text-xs ${onMoveContent ? 'cursor-grab active:cursor-grabbing' : ''} ${draggingId === item.id ? 'opacity-40' : ''} px-1.5 py-0.5 rounded border-l-[3px] ${getStatusColor(item.status)} ${item.status === 'victoria_post' ? 'border-l-fm-lavender' : getTypeBorderColor(item.content_type, item.assigned_to)} truncate`}
                     title={`${item.content_type} · ${item.platform} — ${item.content_needs || 'No description'}`}
                   >
                     <span className="font-bold mr-0.5 opacity-70">{getTypeAbbr(item.content_type, item.assigned_to)}</span>
@@ -270,6 +272,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger, onMoveContent
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-700">
           <span className="font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-gray-200 rounded"></div><span>Draft</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-fm-lavender rounded"></div><span>Victoria Post</span></div>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-yellow-200 rounded"></div><span>Paused</span></div>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-blue-200 rounded"></div><span>Ready</span></div>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-orange-200 rounded"></div><span>Edits</span></div>

@@ -296,6 +296,7 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData, mo
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900"
             >
               <option value="draft">Draft</option>
+              <option value="victoria_post">Victoria Post</option>
               <option value="paused">Paused</option>
               <option value="ready_for_approval">Ready for Approval</option>
               <option value="needs_edits">Needs Edits</option>
