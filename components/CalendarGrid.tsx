@@ -119,7 +119,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger, onMoveContent
       case 'approved':
         return 'bg-green-200 text-green-900';
       case 'scheduled':
-        return 'bg-purple-200 text-purple-900';
+        return 'bg-pink-200 text-pink-900';
       case 'posted':
         return 'bg-emerald-200 text-emerald-900';
       default:
@@ -277,7 +277,7 @@ export default function CalendarGrid({ onDayClick, refreshTrigger, onMoveContent
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-blue-200 rounded"></div><span>Ready</span></div>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-orange-200 rounded"></div><span>Edits</span></div>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-green-200 rounded"></div><span>Approved</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-purple-200 rounded"></div><span>Scheduled</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-pink-200 rounded"></div><span>Scheduled</span></div>
           <div className="flex items-center gap-1.5"><div className="w-4 h-4 bg-emerald-200 rounded"></div><span>Posted</span></div>
         </div>
         {/* Type Legend (left border color) */}

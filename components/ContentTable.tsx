@@ -220,7 +220,7 @@ export default function ContentTable({
     status === 'ready_for_approval' ? 'bg-blue-200 text-blue-800' :
     status === 'needs_edits' ? 'bg-orange-200 text-orange-800' :
     status === 'approved' ? 'bg-green-200 text-green-800' :
-    status === 'scheduled' ? 'bg-purple-200 text-purple-800' :
+    status === 'scheduled' ? 'bg-pink-200 text-pink-800' :
     status === 'posted' ? 'bg-emerald-200 text-emerald-800' :
     'bg-gray-200 text-gray-800';
 
