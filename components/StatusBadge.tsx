@@ -7,6 +7,8 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     switch (status.toLowerCase()) {
       case 'draft':
         return 'bg-gray-100 text-gray-700 border-gray-300';
+      case 'victoria_post':
+        return 'bg-white text-gray-900 border-fm-lavender';
       case 'paused':
         return 'bg-yellow-100 text-yellow-700 border-yellow-300';
       case 'ready_for_approval':
@@ -16,7 +18,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
       case 'approved':
         return 'bg-green-100 text-green-700 border-green-300';
       case 'scheduled':
-        return 'bg-purple-100 text-purple-700 border-purple-300';
+        return 'bg-pink-100 text-pink-700 border-pink-300';
       case 'posted':
         return 'bg-emerald-100 text-emerald-700 border-emerald-300';
       default:

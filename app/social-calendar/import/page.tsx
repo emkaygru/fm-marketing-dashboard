@@ -33,6 +33,7 @@ const TYPE_MAP: Record<string, string> = {
 
 const STATUS_MAP: Record<string, string> = {
   draft: 'draft',
+  'victoria post': 'victoria_post', victoria_post: 'victoria_post',
   paused: 'paused',
   'ready for approval': 'ready_for_approval', ready: 'ready_for_approval', ready_for_approval: 'ready_for_approval',
   'needs edits': 'needs_edits', needs_edits: 'needs_edits',

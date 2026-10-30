@@ -215,11 +215,12 @@ export default function ContentTable({
 
   const statusClass = (status: string) =>
     status === 'draft' ? 'bg-gray-200 text-gray-800' :
+    status === 'victoria_post' ? 'bg-white text-gray-900' :
     status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
     status === 'ready_for_approval' ? 'bg-blue-200 text-blue-800' :
     status === 'needs_edits' ? 'bg-orange-200 text-orange-800' :
     status === 'approved' ? 'bg-green-200 text-green-800' :
-    status === 'scheduled' ? 'bg-purple-200 text-purple-800' :
+    status === 'scheduled' ? 'bg-pink-200 text-pink-800' :
     status === 'posted' ? 'bg-emerald-200 text-emerald-800' :
     'bg-gray-200 text-gray-800';
 
@@ -326,7 +327,7 @@ export default function ContentTable({
                     <div
                       key={item.id}
                       onClick={() => onRowClick?.(item)}
-                      className={`bg-white rounded-lg border border-gray-200 p-3 shadow-sm ${selectedIds.has(item.id) ? 'ring-2 ring-fm-blue/50' : ''} ${onRowClick ? 'cursor-pointer active:bg-blue-50' : ''}`}
+                      className={`${item.status === 'victoria_post' ? 'bg-fm-lavender' : 'bg-white'} rounded-lg border border-gray-200 p-3 shadow-sm ${selectedIds.has(item.id) ? 'ring-2 ring-fm-blue/50' : ''} ${onRowClick ? 'cursor-pointer active:bg-blue-50' : ''}`}
                     >
                       {/* Row 1: checkbox + date + type + platform + status */}
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -494,7 +495,7 @@ export default function ContentTable({
                         <tr
                           key={item.id}
                           onClick={() => onRowClick?.(item)}
-                          className={`hover:bg-blue-50 transition-colors ${selectedIds.has(item.id) ? 'bg-blue-50' : ''} ${onRowClick ? 'cursor-pointer' : ''}`}
+                          className={`hover:bg-blue-50 transition-colors ${selectedIds.has(item.id) ? 'bg-blue-50' : item.status === 'victoria_post' ? 'bg-fm-lavender' : ''} ${onRowClick ? 'cursor-pointer' : ''}`}
                         >
                           <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                             <input

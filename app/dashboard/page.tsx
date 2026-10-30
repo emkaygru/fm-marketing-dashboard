@@ -156,7 +156,7 @@ export default function DashboardPage() {
       case 'approved':
         return 'bg-green-200 text-green-800';
       case 'scheduled':
-        return 'bg-purple-200 text-purple-800';
+        return 'bg-pink-200 text-pink-800';
       case 'posted':
       case 'published':
         return 'bg-emerald-200 text-emerald-800';

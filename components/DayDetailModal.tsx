@@ -258,7 +258,7 @@ export default function DayDetailModal({
                 return (
                   <div
                     key={item.id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-fm-blue transition-colors"
+                    className={`${item.status === 'victoria_post' ? 'bg-fm-lavender' : 'bg-gray-50'} rounded-lg p-4 border border-gray-200 hover:border-fm-blue transition-colors`}
                   >
                     {/* Post header: type badge + platform + status */}
                     <div className="flex items-start justify-between mb-3 gap-2">
@@ -354,6 +354,7 @@ export default function DayDetailModal({
                         className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fm-blue text-gray-900 bg-white"
                       >
                         <option value="draft">Draft</option>
+                        <option value="victoria_post">Victoria Post</option>
                         <option value="paused">Paused</option>
                         <option value="ready_for_approval">Ready for Approval</option>
                         <option value="needs_edits">Needs Edits</option>
